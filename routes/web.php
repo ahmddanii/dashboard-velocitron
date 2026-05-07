@@ -4,22 +4,22 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 
-// Landing page
 Route::get('/', function () {
     return view('landing');
 });
 
-// Dashboard routes — harus login
 Route::middleware(['auth'])->group(function () {
 
-    // Dashboard utama
+    // Dashboard utama — semua role boleh akses
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // DSS Prediksi Profit
-    Route::get('/dashboard/dss',      [DashboardController::class, 'dss'])->name('dashboard.dss');
-    Route::post('/dashboard/predict', [DashboardController::class, 'predict'])->name('dashboard.predict');
+    // DSS — hanya 2 role ini yang boleh operasikan
+    Route::middleware(['role:head-analytics,financial-controller'])->group(function () {
+        Route::get('/dashboard/dss',      [DashboardController::class, 'dss'])->name('dashboard.dss');
+        Route::post('/dashboard/predict', [DashboardController::class, 'predict'])->name('dashboard.predict');
+    });
 
-    // Profile (dari Breeze — jangan dihapus)
+    // Profile
     Route::get('/profile',    [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile',  [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');

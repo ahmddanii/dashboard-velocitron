@@ -1,3 +1,55 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+    .dashboard-card {
+        @apply bg-white
+        border border-outline-variant
+        rounded-xl;
+    }
+
+    .dashboard-card-header {
+        @apply p-4
+        border-b border-outline-variant;
+    }
+
+    .dashboard-card-body {
+        @apply p-4;
+    }
+
+    .dashboard-grid {
+        @apply grid grid-cols-12 gap-6 mb-6;
+    }
+
+    .dashboard-title {
+        @apply font-title-sm
+        text-title-sm;
+    }
+
+    .dashboard-subtitle {
+        @apply text-xs
+        text-on-surface-variant
+        mt-0.5;
+    }
+}
+
+@layer base {
+    body {
+        font-family: "Inter", sans-serif;
+        background-color: #f7f9fb;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+
+    ::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #e2e8f0;
+        border-radius: 10px;
+    }
+}

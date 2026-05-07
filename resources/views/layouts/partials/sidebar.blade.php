@@ -14,11 +14,14 @@
                   {{ request()->routeIs('dashboard') ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/50' }}">
             <span class="material-symbols-outlined mr-3">dashboard</span> Dashboard
         </a>
-        <a href="{{ route('dashboard.dss') }}"
-            class="sidebar-item flex items-center px-4 py-2 mx-2 rounded-md text-sm font-medium tracking-tight duration-200
-                  {{ request()->routeIs('dashboard.dss') ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/50' }}">
-            <span class="material-symbols-outlined mr-3">psychology</span> Prediksi DSS
-        </a>
+        {{-- DSS — hanya tampil untuk 2 role ini --}}
+        @if(auth()->user()->hasAnyRole(['head-analytics', 'financial-controller']))
+            <a href="{{ route('dashboard.dss') }}"
+                class="sidebar-item flex items-center px-4 py-2 mx-2 rounded-md text-sm font-medium tracking-tight duration-200
+              {{ request()->routeIs('dashboard.dss') ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/50' }}">
+                <span class="material-symbols-outlined mr-3">psychology</span> Prediksi DSS
+            </a>
+        @endif
     </nav>
 
     <div class="mt-auto space-y-1 border-t border-slate-800 pt-4">

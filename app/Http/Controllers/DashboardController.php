@@ -7,43 +7,161 @@ use Illuminate\Support\Facades\Http;
 
 class DashboardController extends Controller
 {
-    // Base URL Flask API
     private string $api = 'http://localhost:5000/api';
 
-    // ── Dashboard Utama ───────────────────────────────────────
     public function index()
     {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+
         try {
-            $summary  = Http::timeout(5)->get("{$this->api}/summary")->json();
-            $yearly   = Http::timeout(5)->get("{$this->api}/yearly-trend")->json();
-            $monthly  = Http::timeout(5)->get("{$this->api}/monthly-trend")->json();
-            $category = Http::timeout(5)->get("{$this->api}/profit-by-category")->json();
-            $region   = Http::timeout(5)->get("{$this->api}/sales-by-region")->json();
-            $segment  = Http::timeout(5)->get("{$this->api}/sales-by-segment")->json();
-            $products = Http::timeout(5)->get("{$this->api}/top-products")->json();
+            // Data yang diambil berbeda per role
+            if ($user->hasRole('head-analytics')) {
+                return $this->dashboardAnalytics();
+            } elseif ($user->hasRole('financial-controller')) {
+                return $this->dashboardFinance();
+            } elseif ($user->hasRole('logistics-officer')) {
+                return $this->dashboardLogistics();
+            } elseif ($user->hasRole('procurement-director')) {
+                return $this->dashboardProcurement();
+            } elseif ($user->hasRole('key-account-manager')) {
+                return $this->dashboardKAM();
+            }
+
+            abort(403);
         } catch (\Exception $e) {
-            // Jika Flask tidak jalan, tampilkan pesan error
             return view('dashboard.index', ['apiError' => true]);
         }
+    }
+
+    // ── Head of Data Analytics ────────────────────────────────
+    // Lihat semua data — full access
+    private function dashboardAnalytics()
+    {
+        $summary  = Http::timeout(5)->get("{$this->api}/summary")->json() ?? [];
+        $monthly  = Http::timeout(5)->get("{$this->api}/monthly-trend")->json() ?? [];
+        $yearly   = Http::timeout(5)->get("{$this->api}/yearly-trend")->json() ?? [];
+        $category = Http::timeout(5)->get("{$this->api}/profit-by-category")->json() ?? [];
+        $region   = Http::timeout(5)->get("{$this->api}/sales-by-region")->json() ?? [];
+        $segment  = Http::timeout(5)->get("{$this->api}/sales-by-segment")->json() ?? [];
+        $products = Http::timeout(5)->get("{$this->api}/top-products")->json() ?? [];
 
         return view('dashboard.index', compact(
             'summary',
-            'yearly',
             'monthly',
+            'yearly',
             'category',
             'region',
             'segment',
             'products'
-        ));
+        ) + ['role' => 'head-analytics']);
     }
 
-    // ── Halaman DSS Prediksi ──────────────────────────────────
+    // ── Financial Controller ──────────────────────────────────
+    // Fokus: Profit, Discount, per Region
+    private function dashboardFinance()
+    {
+        $summary  = Http::timeout(5)->get("{$this->api}/summary")->json() ?? [];
+        $region   = Http::timeout(5)->get("{$this->api}/sales-by-region")->json() ?? [];
+        $category = Http::timeout(5)->get("{$this->api}/profit-by-category")->json() ?? [];
+        $yearly   = Http::timeout(5)->get("{$this->api}/yearly-trend")->json() ?? [];
+
+        return view('dashboard.index', compact(
+            'summary',
+            'region',
+            'category',
+            'yearly'
+        ) + [
+            'role'    => 'financial-controller',
+            'monthly' => [],
+            'segment' => [],
+            'products' => [],
+        ]);
+    }
+
+    // ── Chief Logistics Officer ───────────────────────────────
+    // Fokus: Ship Mode, Shipping Days, distribusi region
+    private function dashboardLogistics()
+    {
+        $summary  = Http::timeout(5)->get("{$this->api}/summary")->json() ?? [];
+        $region   = Http::timeout(5)->get("{$this->api}/sales-by-region")->json() ?? [];
+        $yearly   = Http::timeout(5)->get("{$this->api}/yearly-trend")->json() ?? [];
+
+        return view('dashboard.index', compact(
+            'summary',
+            'region',
+            'yearly'
+        ) + [
+            'role'     => 'logistics-officer',
+            'monthly'  => [],
+            'category' => [],
+            'segment'  => [],
+            'products' => [],
+        ]);
+    }
+
+    // ── Director of Strategic Procurement ────────────────────
+    // Fokus: Kategori Technology & Furniture
+    private function dashboardProcurement()
+    {
+        $summary  = Http::timeout(5)->get("{$this->api}/summary")->json() ?? [];
+        $category = Http::timeout(5)->get("{$this->api}/profit-by-category")->json() ?? [];
+        $products = Http::timeout(5)->get("{$this->api}/top-products")->json() ?? [];
+
+        // Filter hanya Technology & Furniture
+        $category = array_filter(
+            $category,
+            fn($c) =>
+            in_array($c['category'], ['Technology', 'Furniture'])
+        );
+
+        return view('dashboard.index', compact(
+            'summary',
+            'category',
+            'products'
+        ) + [
+            'role'    => 'procurement-director',
+            'monthly' => [],
+            'yearly' => [],
+            'region'  => [],
+            'segment' => [],
+        ]);
+    }
+
+    // ── Key Account Manager ───────────────────────────────────
+    // Fokus: Segmen Corporate & Home Office
+    private function dashboardKAM()
+    {
+        $summary  = Http::timeout(5)->get("{$this->api}/summary")->json() ?? [];
+        $segment  = Http::timeout(5)->get("{$this->api}/sales-by-segment")->json() ?? [];
+        $region   = Http::timeout(5)->get("{$this->api}/sales-by-region")->json() ?? [];
+
+        // Filter hanya Corporate & Home Office
+        $segment = array_filter(
+            $segment,
+            fn($s) =>
+            in_array($s['segment'], ['Corporate', 'Home Office'])
+        );
+
+        return view('dashboard.index', compact(
+            'summary',
+            'segment',
+            'region'
+        ) + [
+            'role'     => 'key-account-manager',
+            'monthly'  => [],
+            'yearly' => [],
+            'category' => [],
+            'products' => [],
+        ]);
+    }
+
+    // ── DSS (hanya head-analytics & financial-controller) ────
     public function dss()
     {
         return view('dashboard.dss');
     }
 
-    // ── Proses Form DSS ───────────────────────────────────────
     public function predict(Request $request)
     {
         $request->validate([
@@ -71,7 +189,7 @@ class DashboardController extends Controller
 
             $result = $response->json();
         } catch (\Exception $e) {
-            return back()->withErrors(['api' => 'Flask API tidak dapat dihubungi. Pastikan python app.py sudah berjalan.']);
+            return back()->withErrors(['api' => 'Flask API tidak dapat dihubungi.']);
         }
 
         return view('dashboard.dss', [
