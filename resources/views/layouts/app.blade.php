@@ -13,43 +13,7 @@
         rel="stylesheet" />
 
     {{-- Vite: Tailwind CSS + JS --}}
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f7f9fb;
-        }
-
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-            display: inline-block;
-            vertical-align: middle;
-        }
-
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #e2e8f0;
-            border-radius: 10px;
-        }
-
-        .pipeline-connector {
-            background-image: linear-gradient(90deg, #cbd5e1 50%, transparent 50%);
-            background-size: 8px 1px;
-            background-repeat: repeat-x;
-        }
-    </style>
+    @vite(['resources/css/app.css', 'resources/js/app.js', 'resources/js/dashboard.js'])
 
     @stack('styles')
 </head>

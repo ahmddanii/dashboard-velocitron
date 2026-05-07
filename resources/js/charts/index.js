@@ -1,0 +1,21 @@
+import { initMonthlyChart } from "./monthlyChart";
+import { initYearlyChart } from "./yearlyChart";
+import { initCategoryChart } from "./categoryChart";
+import { initSegmentChart } from "./segmentChart";
+import { initRegionChart } from "./regionChart";
+
+export function initCharts() {
+    const data = window.dashboardData;
+
+    if (!data) return;
+
+    initMonthlyChart(data.monthly);
+
+    initYearlyChart(data.yearly);
+
+    initCategoryChart(data.category);
+
+    initSegmentChart(data.segment);
+
+    initRegionChart(data.region, data.role);
+}
