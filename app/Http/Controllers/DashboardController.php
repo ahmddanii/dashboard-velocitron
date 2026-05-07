@@ -577,4 +577,106 @@ class DashboardController extends Controller
             compact('requests')
         );
     }
+
+    public function reviewRequest($id)
+    {
+        $requestData = TransactionRequest::findOrFail($id);
+
+        /*
+    |--------------------------------------------------------------------------
+    | DSS Prediction Request
+    |--------------------------------------------------------------------------
+    */
+
+        try {
+
+            $response = Http::timeout(10)
+
+                ->post("{$this->api}/predict-profit", [
+
+                    'sales' =>
+                    (float) $requestData->sales,
+
+                    'quantity' =>
+                    (int) $requestData->quantity,
+
+                    'discount' =>
+                    (float) $requestData->discount,
+
+                    'shipping_days' =>
+                    (int) $requestData->shipping_days,
+
+                    'category' =>
+                    $requestData->category,
+
+                    'segment' =>
+                    $requestData->segment,
+
+                    'region' =>
+                    $requestData->region,
+
+                    'ship_mode' =>
+                    $requestData->ship_mode,
+                ]);
+
+            $result = $response->json();
+        } catch (\Exception $e) {
+
+            $result = null;
+        }
+
+        return view(
+            'requests.review',
+            compact(
+                'requestData',
+                'result'
+            )
+        );
+    }
+
+    public function approveRequest($id)
+    {
+        $requestData = TransactionRequest::findOrFail($id);
+
+        $requestData->update([
+
+            'status' => 'approved',
+
+            'approved_by' => auth()->id(),
+
+            'approved_at' => now(),
+        ]);
+
+        return redirect()
+
+            ->route('requests.pending')
+
+            ->with(
+                'success',
+                'Request berhasil di-approve.'
+            );
+    }
+
+    public function rejectRequest($id)
+    {
+        $requestData = TransactionRequest::findOrFail($id);
+
+        $requestData->update([
+
+            'status' => 'rejected',
+
+            'approved_by' => auth()->id(),
+
+            'approved_at' => now(),
+        ]);
+
+        return redirect()
+
+            ->route('requests.pending')
+
+            ->with(
+                'success',
+                'Request berhasil di-reject.'
+            );
+    }
 }

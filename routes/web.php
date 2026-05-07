@@ -39,6 +39,23 @@ Route::middleware(['auth'])->group(function () {
         '/requests/pending',
         [DashboardController::class, 'pendingRequests']
     )->name('requests.pending');
+
+    Route::get(
+        '/requests/{id}/review',
+        [DashboardController::class, 'reviewRequest']
+    )->name('requests.review');
+
+    Route::post(
+        '/requests/{id}/approve',
+        [DashboardController::class, 'approveRequest']
+    )->name('requests.approve');
+
+    Route::post(
+        '/requests/{id}/reject',
+        [DashboardController::class, 'rejectRequest']
+    )->name('requests.reject');
+
+    
 });
 
 require __DIR__ . '/auth.php';

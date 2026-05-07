@@ -117,7 +117,7 @@
                                     <td class="py-4">
 
                                         <span class="px-2 py-1 rounded-full text-xs font-bold
-                                                bg-amber-100 text-amber-700">
+                                                        bg-amber-100 text-amber-700">
 
                                             Pending
 
@@ -127,10 +127,10 @@
 
                                     <td class="py-4 text-right">
 
-                                        <a href="#" class="inline-flex items-center gap-2
-                                                px-3 py-2 rounded-lg
-                                                bg-secondary text-white
-                                                text-xs font-semibold">
+                                        <a href="{{ route('requests.review', $request->id) }}" class="inline-flex items-center gap-2
+                                                        px-3 py-2 rounded-lg
+                                                        bg-secondary text-white
+                                                        text-xs font-semibold">
 
                                             <span class="material-symbols-outlined text-sm">
                                                 psychology
