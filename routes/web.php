@@ -23,6 +23,22 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/profile',    [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile',  [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Create Request
+    Route::get(
+        '/requests/create',
+        [DashboardController::class, 'createRequest']
+    )->name('requests.create');
+
+    Route::post(
+        '/requests/store',
+        [DashboardController::class, 'storeRequest']
+    )->name('requests.store');
+
+    Route::get(
+        '/requests/pending',
+        [DashboardController::class, 'pendingRequests']
+    )->name('requests.pending');
 });
 
 require __DIR__ . '/auth.php';

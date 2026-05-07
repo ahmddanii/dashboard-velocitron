@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use App\Models\Strategy;
+use App\Models\TransactionRequest;
+
 
 class DashboardController extends Controller
 {
@@ -54,7 +57,23 @@ class DashboardController extends Controller
             'region',
             'segment',
             'products'
-        ) + ['role' => 'head-analytics']);
+        ) + [
+
+            'role' => 'head-analytics',
+
+            'dashboardData' => [
+
+                'role' => 'head-analytics',
+
+                'monthly' => $monthly,
+                'yearly' => $yearly,
+
+                'category' => $category,
+                'region' => $region,
+
+                'segment' => $segment,
+            ]
+        ]);
     }
 
     // ── Financial Controller ──────────────────────────────────
@@ -72,10 +91,25 @@ class DashboardController extends Controller
             'category',
             'yearly'
         ) + [
-            'role'    => 'financial-controller',
+
+            'role' => 'financial-controller',
+
             'monthly' => [],
             'segment' => [],
             'products' => [],
+
+            'dashboardData' => [
+
+                'role' => 'financial-controller',
+
+                'monthly' => [],
+                'yearly' => $yearly,
+
+                'category' => $category,
+                'region' => $region,
+
+                'segment' => [],
+            ]
         ]);
     }
 
@@ -83,48 +117,139 @@ class DashboardController extends Controller
     // Fokus: Ship Mode, Shipping Days, distribusi region
     private function dashboardLogistics()
     {
-        $summary  = Http::timeout(5)->get("{$this->api}/summary")->json() ?? [];
-        $region   = Http::timeout(5)->get("{$this->api}/sales-by-region")->json() ?? [];
-        $yearly   = Http::timeout(5)->get("{$this->api}/yearly-trend")->json() ?? [];
+        $summary = Http::timeout(5)
+            ->get("{$this->api}/summary")
+            ->json() ?? [];
+
+        $region = Http::timeout(5)
+            ->get("{$this->api}/sales-by-region")
+            ->json() ?? [];
+
+        $yearly = Http::timeout(5)
+            ->get("{$this->api}/yearly-trend")
+            ->json() ?? [];
+
+        /*
+    |--------------------------------------------------------------------------
+    | DSS Intelligence Feed
+    |--------------------------------------------------------------------------
+    */
+
+        $strategies = Strategy::latest()
+
+            ->where(
+                'target_role',
+                'logistics-officer'
+            )
+
+            ->take(5)
+
+            ->get();
 
         return view('dashboard.index', compact(
             'summary',
             'region',
-            'yearly'
+            'yearly',
+            'strategies'
         ) + [
-            'role'     => 'logistics-officer',
-            'monthly'  => [],
+
+            'role' => 'logistics-officer',
+
+            'monthly' => [],
             'category' => [],
-            'segment'  => [],
+            'segment' => [],
             'products' => [],
+
+            'dashboardData' => [
+
+                'role' => 'logistics-officer',
+
+                'monthly' => [],
+                'yearly' => $yearly,
+
+                'category' => [],
+                'region' => $region,
+
+                'segment' => [],
+            ]
         ]);
     }
 
     // ── Director of Strategic Procurement ────────────────────
     // Fokus: Kategori Technology & Furniture
+
     private function dashboardProcurement()
     {
-        $summary  = Http::timeout(5)->get("{$this->api}/summary")->json() ?? [];
-        $category = Http::timeout(5)->get("{$this->api}/profit-by-category")->json() ?? [];
-        $products = Http::timeout(5)->get("{$this->api}/top-products")->json() ?? [];
+        $summary = Http::timeout(5)
+            ->get("{$this->api}/summary")
+            ->json() ?? [];
 
-        // Filter hanya Technology & Furniture
+        $category = Http::timeout(5)
+            ->get("{$this->api}/profit-by-category")
+            ->json() ?? [];
+
+        $products = Http::timeout(5)
+            ->get("{$this->api}/top-products")
+            ->json() ?? [];
+
+        /*
+    |--------------------------------------------------------------------------
+    | Filter Category
+    |--------------------------------------------------------------------------
+    */
+
         $category = array_filter(
             $category,
             fn($c) =>
-            in_array($c['category'], ['Technology', 'Furniture'])
+            in_array(
+                $c['category'],
+                ['Technology', 'Furniture']
+            )
         );
+
+        /*
+    |--------------------------------------------------------------------------
+    | DSS Intelligence Feed
+    |--------------------------------------------------------------------------
+    */
+
+        $strategies = Strategy::latest()
+
+            ->where(
+                'target_role',
+                'procurement-director'
+            )
+
+            ->take(5)
+
+            ->get();
 
         return view('dashboard.index', compact(
             'summary',
             'category',
-            'products'
+            'products',
+            'strategies'
         ) + [
-            'role'    => 'procurement-director',
+
+            'role' => 'procurement-director',
+
             'monthly' => [],
             'yearly' => [],
-            'region'  => [],
+            'region' => [],
             'segment' => [],
+
+            'dashboardData' => [
+
+                'role' => 'procurement-director',
+
+                'monthly' => [],
+                'yearly' => [],
+
+                'category' => $category,
+                'region' => [],
+
+                'segment' => [],
+            ]
         ]);
     }
 
@@ -132,27 +257,76 @@ class DashboardController extends Controller
     // Fokus: Segmen Corporate & Home Office
     private function dashboardKAM()
     {
-        $summary  = Http::timeout(5)->get("{$this->api}/summary")->json() ?? [];
-        $segment  = Http::timeout(5)->get("{$this->api}/sales-by-segment")->json() ?? [];
-        $region   = Http::timeout(5)->get("{$this->api}/sales-by-region")->json() ?? [];
+        $summary = Http::timeout(5)
+            ->get("{$this->api}/summary")
+            ->json() ?? [];
 
-        // Filter hanya Corporate & Home Office
+        $segment = Http::timeout(5)
+            ->get("{$this->api}/sales-by-segment")
+            ->json() ?? [];
+
+        $region = Http::timeout(5)
+            ->get("{$this->api}/sales-by-region")
+            ->json() ?? [];
+
+        /*
+    |--------------------------------------------------------------------------
+    | Filter Segment
+    |--------------------------------------------------------------------------
+    */
+
         $segment = array_filter(
             $segment,
             fn($s) =>
-            in_array($s['segment'], ['Corporate', 'Home Office'])
+            in_array(
+                $s['segment'],
+                ['Corporate', 'Home Office']
+            )
         );
+
+        /*
+    |--------------------------------------------------------------------------
+    | DSS Intelligence Feed
+    |--------------------------------------------------------------------------
+    */
+
+        $strategies = Strategy::latest()
+
+            ->where(
+                'target_role',
+                'key-account-manager'
+            )
+
+            ->take(5)
+
+            ->get();
 
         return view('dashboard.index', compact(
             'summary',
             'segment',
-            'region'
+            'region',
+            'strategies'
         ) + [
-            'role'     => 'key-account-manager',
-            'monthly'  => [],
+
+            'role' => 'key-account-manager',
+
+            'monthly' => [],
             'yearly' => [],
             'category' => [],
             'products' => [],
+
+            'dashboardData' => [
+
+                'role' => 'key-account-manager',
+
+                'monthly' => [],
+                'yearly' => [],
+
+                'category' => [],
+                'region' => $region,
+
+                'segment' => $segment,
+            ]
         ]);
     }
 
@@ -176,25 +350,231 @@ class DashboardController extends Controller
         ]);
 
         try {
-            $response = Http::timeout(5)->post("{$this->api}/predict-profit", [
-                'sales'         => (float) $request->sales,
-                'quantity'      => (int)   $request->quantity,
-                'discount'      => (float) $request->discount,
-                'shipping_days' => (int)   $request->shipping_days,
-                'category'      => $request->category,
-                'segment'       => $request->segment,
-                'region'        => $request->region,
-                'ship_mode'     => $request->ship_mode,
-            ]);
+
+            $response = Http::timeout(5)
+                ->post("{$this->api}/predict-profit", [
+
+                    'sales' => (float) $request->sales,
+
+                    'quantity' =>
+                    (int) $request->quantity,
+
+                    'discount' =>
+                    (float) $request->discount,
+
+                    'shipping_days' =>
+                    (int) $request->shipping_days,
+
+                    'category' =>
+                    $request->category,
+
+                    'segment' =>
+                    $request->segment,
+
+                    'region' =>
+                    $request->region,
+
+                    'ship_mode' =>
+                    $request->ship_mode,
+                ]);
 
             $result = $response->json();
+
+            $prediction =
+                $result['prediction']
+                ?? 'Unknown';
+
+            $confidence =
+                $result['confidence']
+                ?? 0;
+
+            /*
+        |--------------------------------------------------------------------------
+        | DSS Recommendation Engine
+        |--------------------------------------------------------------------------
+        */
+
+            if ($prediction === 'Loss') {
+
+                Strategy::create([
+
+                    'target_role' =>
+                    'logistics-officer',
+
+                    'title' =>
+                    'Optimasi Pengiriman',
+
+                    'recommendation' =>
+                    'Gunakan Standard Class untuk menekan biaya distribusi.',
+
+                    'prediction' =>
+                    $prediction,
+
+                    'confidence' =>
+                    $confidence,
+                ]);
+
+                Strategy::create([
+
+                    'target_role' =>
+                    'procurement-director',
+
+                    'title' =>
+                    'Batasi Margin Procurement',
+
+                    'recommendation' =>
+                    'Kurangi pembelian pada kategori dengan margin rendah.',
+
+                    'prediction' =>
+                    $prediction,
+
+                    'confidence' =>
+                    $confidence,
+                ]);
+
+                Strategy::create([
+
+                    'target_role' =>
+                    'key-account-manager',
+
+                    'title' =>
+                    'Batasi Diskon Client',
+
+                    'recommendation' =>
+                    'Hindari pemberian diskon tinggi pada kontrak baru.',
+
+                    'prediction' =>
+                    $prediction,
+
+                    'confidence' =>
+                    $confidence,
+                ]);
+            }
         } catch (\Exception $e) {
-            return back()->withErrors(['api' => 'Flask API tidak dapat dihubungi.']);
+
+            return back()->withErrors([
+                'api' =>
+                'Flask API tidak dapat dihubungi.'
+            ]);
         }
 
         return view('dashboard.dss', [
+
             'result' => $result,
-            'input'  => $request->all(),
+
+            'input' =>
+            $request->all(),
         ]);
+    }
+
+    public function createRequest()
+    {
+        return view('requests.create');
+    }
+
+    public function storeRequest(Request $request)
+    {
+        $request->validate([
+
+            'request_type' =>
+            'required',
+
+            'title' =>
+            'required|max:255',
+
+            'description' =>
+            'nullable',
+
+            'sales' =>
+            'required|numeric|min:0',
+
+            'quantity' =>
+            'required|integer|min:1',
+
+            'discount' =>
+            'required|numeric|min:0|max:0.8',
+
+            'shipping_days' =>
+            'required|integer|min:0|max:7',
+
+            'category' =>
+            'required',
+
+            'segment' =>
+            'required',
+
+            'region' =>
+            'required',
+
+            'ship_mode' =>
+            'required',
+        ]);
+
+        TransactionRequest::create([
+
+            'requester_id' =>
+            auth()->id(),
+
+            'request_type' =>
+            $request->request_type,
+
+            'title' =>
+            $request->title,
+
+            'description' =>
+            $request->description,
+
+            'sales' =>
+            $request->sales,
+
+            'quantity' =>
+            $request->quantity,
+
+            'discount' =>
+            $request->discount,
+
+            'shipping_days' =>
+            $request->shipping_days,
+
+            'category' =>
+            $request->category,
+
+            'segment' =>
+            $request->segment,
+
+            'region' =>
+            $request->region,
+
+            'ship_mode' =>
+            $request->ship_mode,
+
+            'status' =>
+            'pending',
+        ]);
+
+        return redirect()
+
+            ->route('dashboard')
+
+            ->with(
+                'success',
+                'Request berhasil diajukan ke Financial Controller.'
+            );
+    }
+
+    public function pendingRequests()
+    {
+        $requests = TransactionRequest::latest()
+
+            ->where('status', 'pending')
+
+            ->with('requester')
+
+            ->get();
+
+        return view(
+            'requests.pending',
+            compact('requests')
+        );
     }
 }

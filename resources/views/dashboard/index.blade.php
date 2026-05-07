@@ -8,7 +8,13 @@
 
         <div class="max-w-[1440px] mx-auto">
 
-            {{-- ── Error: Flask tidak jalan ──────────────────────── --}}
+            <script type="application/json" id="dashboard-context">
+
+                @json($dashboardData)
+
+            </script>
+
+            {{-- Error: Flask tidak jalan --}}
             @if(isset($apiError))
 
                 @include('dashboard.partials.api-error')
@@ -29,26 +35,3 @@
     </div>
 
 @endsection
-
-@push('scripts')
-
-    <script>
-
-        window.dashboardData = {
-
-            role: @json($role),
-
-            monthly: @json($monthly ?? []),
-
-            yearly: @json($yearly ?? []),
-
-            category: @json($category ?? []),
-
-            region: @json($region ?? []),
-
-            segment: @json($segment ?? []),
-        };
-
-    </script>
-
-@endpush

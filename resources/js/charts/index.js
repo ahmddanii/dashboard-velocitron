@@ -5,7 +5,11 @@ import { initSegmentChart } from "./segmentChart";
 import { initRegionChart } from "./regionChart";
 
 export function initCharts() {
-    const data = window.dashboardData;
+    const context = document.getElementById("dashboard-context");
+
+    if (!context) return;
+
+    const data = JSON.parse(context.textContent);
 
     if (!data) return;
 

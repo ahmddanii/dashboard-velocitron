@@ -1,3 +1,33 @@
+<div class="flex justify-end mb-6">
+
+    <a href="{{ route('requests.create') }}" class="inline-flex items-center gap-2
+        px-4 py-2 rounded-lg
+        bg-secondary text-white
+        text-sm font-semibold hover:opacity-90 transition">
+
+        <span class="material-symbols-outlined">
+            add
+        </span>
+
+        Create Request
+
+    </a>
+
+    <a href="{{ route('requests.pending') }}" class="inline-flex items-center gap-2
+        px-4 py-2 rounded-lg
+        bg-secondary text-white
+        text-sm font-semibold">
+
+        <span class="material-symbols-outlined">
+            pending_actions
+        </span>
+
+        Pending Requests
+
+    </a>
+
+</div>
+
 <div class="dashboard-grid">
 
     <x-ui.card class="col-span-12 md:col-span-6 overflow-hidden">
@@ -54,7 +84,7 @@
                                     </div>
 
                                     <span class="inline-flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded-full
-                                            {{ $cat['category'] === 'Technology'
+                                                                                {{ $cat['category'] === 'Technology'
                     ? 'bg-blue-50 text-blue-700'
                     : 'bg-amber-50 text-amber-700' }}">
 
@@ -152,3 +182,6 @@
     </div>
 
 </x-ui.card>
+
+{{-- Intellegence Feed --}}
+@include('dashboard.partials.intelligence-feed')
