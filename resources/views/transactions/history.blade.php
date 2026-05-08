@@ -26,15 +26,39 @@
 
             </div>
 
-            <x-ui.card class="overflow-hidden">
 
-                <div class="dashboard-card-header">
 
-                    <h3 class="dashboard-title">
-                        Approval Audit Trail
-                    </h3>
+            <div class="flex justify-end mb-6">
 
-                </div>
+                <a href="{{ route('transactions.export') }}" class="inline-flex items-center gap-2
+                    px-4 py-2 rounded-xl
+                    bg-green-600 text-white
+                    text-sm font-semibold
+                    hover:bg-green-700 transition">
+
+                    <span class="material-symbols-outlined">
+
+                        download
+
+                    </span>
+
+                    Export CSV
+
+                </a>
+
+            </div>
+        </div>
+
+        <x-ui.card class="overflow-hidden">
+
+
+            <div class="dashboard-card-header">
+
+                <h3 class="dashboard-title">
+                    Approval Audit Trail
+                </h3>
+
+
 
                 <div class="dashboard-card-body overflow-x-auto">
 
@@ -114,9 +138,9 @@
                                                         @if($trx->prediction)
 
                                                                                 <span class="inline-flex items-center gap-1.5
-                                                                                            px-2 py-1 rounded-full text-xs font-bold
+                                                                                                                                                                                                                                                                                            px-2 py-1 rounded-full text-xs font-bold
 
-                                                                                            {{ $trx->prediction == 'Menguntungkan'
+                                                                                                                                                                                                                                                                                            {{ $trx->prediction == 'Menguntungkan'
                                                             ? 'bg-green-100 text-green-700'
                                                             : 'bg-red-100 text-red-700' }}">
 
@@ -153,9 +177,9 @@
                                                     <td class="py-4">
 
                                                         <span class="inline-flex items-center gap-1.5
-                                                                px-2 py-1 rounded-full text-xs font-bold
+                                                                                                                                                                px-2 py-1 rounded-full text-xs font-bold
 
-                                                                {{ $trx->status == 'approved'
+                                                                                                                                                                {{ $trx->status == 'approved'
                                 ? 'bg-green-100 text-green-700'
                                 : 'bg-red-100 text-red-700' }}">
 
@@ -209,9 +233,9 @@
 
                 </div>
 
-            </x-ui.card>
+        </x-ui.card>
 
-        </div>
+    </div>
 
     </div>
 

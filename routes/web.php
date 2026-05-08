@@ -57,8 +57,26 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get(
         '/transactions/history',
-        [DashboardController::class, 'transactionHistory']
+        [
+            DashboardController::class,
+            'transactionHistory'
+        ]
     )->name('transactions.history');
+
+    Route::get(
+        '/transactions/export',
+        [
+            DashboardController::class,
+            'exportTransactions'
+        ]
+    )->name('transactions.export');
+    Route::get(
+        '/analytics/export',
+        [
+            DashboardController::class,
+            'exportAnalyticsReport'
+        ]
+    )->name('analytics.export');
 });
 
 require __DIR__ . '/auth.php';

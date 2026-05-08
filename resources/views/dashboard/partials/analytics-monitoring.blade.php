@@ -18,6 +18,26 @@
 
         </div>
 
+        <div class="flex justify-end mb-4">
+
+            <a href="{{ route('analytics.export') }}" class="inline-flex items-center gap-2
+        px-4 py-2 rounded-xl
+        bg-purple-600 text-white
+        text-sm font-semibold
+        hover:bg-purple-700 transition">
+
+                <span class="material-symbols-outlined">
+
+                    download
+
+                </span>
+
+                Export DSS Report
+
+            </a>
+
+        </div>
+
         <div class="dashboard-card-body">
 
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">

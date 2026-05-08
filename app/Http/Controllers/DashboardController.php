@@ -1658,6 +1658,207 @@ class DashboardController extends Controller
         );
     }
 
+    public function exportTransactions()
+    {
+        $transactions = TransactionRequest::latest()
+
+            ->with([
+                'requester',
+                'approver'
+            ])
+
+            ->get();
+
+        $filename =
+            'transaction-report-'
+            . now()->format('Ymd_His')
+            . '.csv';
+
+        $headers = [
+
+            'Content-Type' =>
+            'text/csv',
+
+            'Content-Disposition' =>
+            "attachment; filename={$filename}",
+        ];
+
+        $callback = function () use ($transactions) {
+
+            $file = fopen('php://output', 'w');
+
+            /*
+        |--------------------------------------------------------------------------
+        | CSV Header
+        |--------------------------------------------------------------------------
+        */
+
+            fputcsv($file, [
+
+                'Title',
+                'Request Type',
+                'Requester',
+                'Sales',
+                'Quantity',
+                'Prediction',
+                'Confidence',
+                'Status',
+                'Approved By',
+                'Created At',
+            ]);
+
+            /*
+        |--------------------------------------------------------------------------
+        | CSV Rows
+        |--------------------------------------------------------------------------
+        */
+
+            foreach ($transactions as $t) {
+
+                fputcsv($file, [
+
+                    $t->title,
+
+                    $t->request_type,
+
+                    $t->requester?->name,
+
+                    $t->sales,
+
+                    $t->quantity,
+
+                    $t->prediction,
+
+                    $t->confidence,
+
+                    strtoupper($t->status),
+
+                    $t->approver?->name,
+
+                    $t->created_at,
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()
+
+            ->stream($callback, 200, $headers);
+    }
+
+    public function exportAnalyticsReport()
+    {
+        /*
+    |--------------------------------------------------------------------------
+    | DSS Monitoring Data
+    |--------------------------------------------------------------------------
+    */
+
+        $transactions = TransactionRequest::all();
+
+        $totalPredictions =
+            $transactions->count();
+
+        $approved =
+            $transactions->where(
+                'status',
+                'approved'
+            )->count();
+
+        $rejected =
+            $transactions->where(
+                'status',
+                'rejected'
+            )->count();
+
+        $avgConfidence = round(
+
+            $transactions->avg(
+                'confidence'
+            ),
+
+            1
+        );
+
+        $filename =
+            'dss-monitoring-report-'
+            . now()->format('Ymd_His')
+            . '.csv';
+
+        $headers = [
+
+            'Content-Type' =>
+            'text/csv',
+
+            'Content-Disposition' =>
+            "attachment; filename={$filename}",
+        ];
+
+        $callback = function () use (
+
+            $totalPredictions,
+            $approved,
+            $rejected,
+            $avgConfidence
+
+        ) {
+
+            $file = fopen(
+                'php://output',
+                'w'
+            );
+
+            /*
+        |--------------------------------------------------------------------------
+        | Header
+        |--------------------------------------------------------------------------
+        */
+
+            fputcsv($file, [
+
+                'Metric',
+                'Value',
+            ]);
+
+            /*
+        |--------------------------------------------------------------------------
+        | Metrics
+        |--------------------------------------------------------------------------
+        */
+
+            fputcsv($file, [
+                'Prediction Volume',
+                $totalPredictions
+            ]);
+
+            fputcsv($file, [
+                'Approved Transactions',
+                $approved
+            ]);
+
+            fputcsv($file, [
+                'Rejected Transactions',
+                $rejected
+            ]);
+
+            fputcsv($file, [
+                'Average Confidence',
+                $avgConfidence . '%'
+            ]);
+
+            fclose($file);
+        };
+
+        return response()
+
+            ->stream(
+                $callback,
+                200,
+                $headers
+            );
+    }
+
     private function getIntelligenceFeed($role)
     {
         $query = TransactionRequest::latest();
