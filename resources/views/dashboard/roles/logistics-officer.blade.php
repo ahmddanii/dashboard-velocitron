@@ -1,3 +1,5 @@
+@include('dashboard.partials.logistics-intelligence')
+
 <div class="flex justify-end mb-6">
 
     <a href="{{ route('requests.create') }}" class="inline-flex items-center gap-2
@@ -115,49 +117,7 @@
 
     </x-ui.card>
 
-    <x-ui.card class="col-span-12 md:col-span-7 overflow-hidden bg-amber-50 border-amber-200">
-
-        <div class="dashboard-card-body">
-
-            <div class="flex items-start gap-4">
-
-                <div class="w-12 h-12 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
-
-                    <span class="material-symbols-outlined material-icon-fill text-2xl">
-                        info
-                    </span>
-
-                </div>
-
-                <div>
-
-                    <p class="font-semibold text-amber-900 mb-2">
-                        Akses DSS Terbatas — Output Only
-                    </p>
-
-                    <p class="text-sm text-amber-700 leading-relaxed">
-
-                        Sebagai CLO, kamu menerima
-                        <strong>output rekomendasi</strong>
-                        dari DSS — bukan mengoperasikannya langsung.
-
-                        Jika DSS mendeteksi bahwa metode pengiriman tertentu
-                        (<em>First Class, Same Day</em>)
-                        berpotensi merugikan, instruksi akan diteruskan
-                        ke kamu melalui Financial Controller.
-
-                    </p>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </x-ui.card>
-
+    {{-- Intellegence Feed --}}
+    @include('dashboard.partials.intelligence-feed')
 
 </div>
-
-{{-- Intellegence Feed --}}
-@include('dashboard.partials.intelligence-feed')

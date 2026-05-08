@@ -369,6 +369,97 @@ class DashboardController extends Controller
 
             ->get();
 
+        /*
+|--------------------------------------------------------------------------
+| Logistics DSS Analytics
+|--------------------------------------------------------------------------
+*/
+
+        $totalShipment = TransactionRequest::where(
+            'request_type',
+            'shipment'
+        )->count();
+
+        $approvedShipment = TransactionRequest::where(
+            'request_type',
+            'shipment'
+        )
+
+            ->where(
+                'status',
+                'approved'
+            )
+
+            ->count();
+
+        /*
+|--------------------------------------------------------------------------
+| Shipment Approval Rate
+|--------------------------------------------------------------------------
+*/
+
+        $shipmentApprovalRate =
+
+            $totalShipment > 0
+
+            ? round(
+                ($approvedShipment / $totalShipment) * 100,
+                1
+            )
+
+            : 0;
+
+        /*
+|--------------------------------------------------------------------------
+| Most Risky Ship Mode
+|--------------------------------------------------------------------------
+*/
+
+        $mostRiskyShipMode = TransactionRequest::where(
+            'request_type',
+            'shipment'
+        )
+
+            ->where(
+                'status',
+                'rejected'
+            )
+
+            ->selectRaw('ship_mode, COUNT(*) as total')
+
+            ->groupBy('ship_mode')
+
+            ->orderByDesc('total')
+
+            ->first();
+
+        /*
+|--------------------------------------------------------------------------
+| Logistics Insights
+|--------------------------------------------------------------------------
+*/
+
+        $logisticsInsights = [];
+
+        if ($shipmentApprovalRate >= 70) {
+
+            $logisticsInsights[] =
+
+                "Shipment approval rate stabil di {$shipmentApprovalRate}%, menunjukkan efisiensi distribusi masih berada dalam batas aman.";
+        } else {
+
+            $logisticsInsights[] =
+
+                "Shipment rejection meningkat. DSS mendeteksi peningkatan risiko operasional distribusi.";
+        }
+
+        if ($mostRiskyShipMode) {
+
+            $logisticsInsights[] =
+
+                "Ship mode {$mostRiskyShipMode->ship_mode} menunjukkan rejection tertinggi pada shipment transactions.";
+        }
+
         return view('dashboard.index', compact(
             'summary',
             'region',
@@ -386,6 +477,18 @@ class DashboardController extends Controller
             $this->getIntelligenceFeed(
                 'logistics-officer'
             ),
+            'logisticsAnalytics' => [
+
+                'approval_rate' =>
+                $shipmentApprovalRate,
+
+                'risky_ship_mode' =>
+                $mostRiskyShipMode?->ship_mode
+                    ?? '-',
+            ],
+
+            'logisticsInsights' =>
+            $logisticsInsights,
 
             'dashboardData' => [
 
@@ -604,18 +707,26 @@ class DashboardController extends Controller
             ->get("{$this->api}/sales-by-region")
             ->json() ?? [];
 
+        $monthly = Http::timeout(5)
+            ->get("{$this->api}/monthly-trend")
+            ->json() ?? [];
+
         /*
     |--------------------------------------------------------------------------
     | Filter Segment
     |--------------------------------------------------------------------------
     */
 
-        $segment = array_filter(
-            $segment,
-            fn($s) =>
-            in_array(
-                $s['segment'],
-                ['Corporate', 'Home Office']
+        $segment = array_values(
+
+            array_filter(
+                $segment,
+
+                fn($s) =>
+                in_array(
+                    $s['segment'],
+                    ['Corporate', 'Home Office']
+                )
             )
         );
 
@@ -636,6 +747,114 @@ class DashboardController extends Controller
 
             ->get();
 
+        /*
+|--------------------------------------------------------------------------
+| KAM DSS Analytics
+|--------------------------------------------------------------------------
+*/
+
+        $totalContracts = TransactionRequest::where(
+            'request_type',
+            'contract'
+        )->count();
+
+        $approvedContracts = TransactionRequest::where(
+            'request_type',
+            'contract'
+        )
+
+            ->where(
+                'status',
+                'approved'
+            )
+
+            ->count();
+
+        /*
+|--------------------------------------------------------------------------
+| Contract Approval Rate
+|--------------------------------------------------------------------------
+*/
+
+        $contractApprovalRate =
+
+            $totalContracts > 0
+
+            ? round(
+                ($approvedContracts / $totalContracts) * 100,
+                1
+            )
+
+            : 0;
+
+        /*
+|--------------------------------------------------------------------------
+| Most Profitable Segment
+|--------------------------------------------------------------------------
+*/
+
+        $topSegment = collect($segment)
+
+            ->sortByDesc(
+                fn($s) =>
+                (float) $s['total_profit']
+            )
+
+            ->first();
+
+        /*
+|--------------------------------------------------------------------------
+| Strongest Sales Region
+|--------------------------------------------------------------------------
+*/
+
+        $topRegion = collect($region)
+
+            ->sortByDesc(
+                fn($r) =>
+                (float) $r['total_sales']
+            )
+
+            ->first();
+
+        /*
+|--------------------------------------------------------------------------
+| KAM Insights
+|--------------------------------------------------------------------------
+*/
+
+        $kamInsights = [];
+
+        if ($contractApprovalRate >= 70) {
+
+            $kamInsights[] =
+
+                "Contract approval rate stabil di {$contractApprovalRate}%, menunjukkan client profitability masih berada dalam margin aman.";
+        } else {
+
+            $kamInsights[] =
+
+                "Contract rejection meningkat. DSS mendeteksi peningkatan risiko profitabilitas pada beberapa kontrak klien.";
+        }
+
+        if ($topSegment) {
+
+            $kamInsights[] =
+
+                "Segment {$topSegment['segment']} menghasilkan profit tertinggi dengan total profit sebesar $"
+                . number_format($topSegment['total_profit'], 0)
+                . ".";
+        }
+
+        if ($topRegion) {
+
+            $kamInsights[] =
+
+                "Region {$topRegion['region']} mendominasi sales contract dengan total sales sebesar $"
+                . number_format($topRegion['total_sales'], 0)
+                . ".";
+        }
+
         return view('dashboard.index', compact(
             'summary',
             'segment',
@@ -649,15 +868,32 @@ class DashboardController extends Controller
             'yearly' => [],
             'category' => [],
             'products' => [],
+            'intelligenceFeed' =>
             $this->getIntelligenceFeed(
                 'key-account-manager'
             ),
+            'kamAnalytics' => [
+
+                'approval_rate' =>
+                $contractApprovalRate,
+
+                'top_segment' =>
+                $topSegment['segment']
+                    ?? '-',
+
+                'top_region' =>
+                $topRegion['region']
+                    ?? '-',
+            ],
+
+            'kamInsights' =>
+            $kamInsights,
 
             'dashboardData' => [
 
                 'role' => 'key-account-manager',
 
-                'monthly' => [],
+                'monthly' => $monthly,
                 'yearly' => [],
 
                 'category' => [],
@@ -1311,102 +1547,91 @@ class DashboardController extends Controller
 
     private function getIntelligenceFeed($role)
     {
-        $transactions = TransactionRequest::latest()
+        $query = TransactionRequest::latest();
 
-            ->whereIn('status', [
-                'approved',
-                'rejected'
-            ])
+        /*
+    |--------------------------------------------------------------------------
+    | Contextual Feed by Role
+    |--------------------------------------------------------------------------
+    */
 
-            ->take(10)
+        switch ($role) {
 
-            ->get();
+            case 'procurement-director':
 
-        return $transactions->map(function ($trx) use ($role) {
+                $query->where(
+                    'request_type',
+                    'procurement'
+                );
 
-            $message = null;
+                break;
 
-            /*
-        |--------------------------------------------------------------------------
-        | Logistics Officer
-        |--------------------------------------------------------------------------
-        */
+            case 'logistics-officer':
 
-            if (
-                $role === 'logistics-officer'
-                &&
-                $trx->request_type === 'shipment'
-            ) {
+                $query->where(
+                    'request_type',
+                    'shipment'
+                );
 
-                $message =
-                    $trx->status === 'approved'
+                break;
 
-                    ? "Shipment {$trx->ship_mode} approved. Prediksi profit {$trx->prediction}."
+            case 'key-account-manager':
 
-                    : "Shipment {$trx->ship_mode} ditolak karena risiko profit rendah.";
-            }
+                $query->where(
+                    'request_type',
+                    'contract'
+                );
 
-            /*
-        |--------------------------------------------------------------------------
-        | Procurement Director
-        |--------------------------------------------------------------------------
-        */
+                break;
 
-            if (
-                $role === 'procurement-director'
-                &&
-                $trx->request_type === 'procurement'
-            ) {
+            case 'financial-controller':
 
-                $message =
-                    $trx->status === 'approved'
+                /*
+            |--------------------------------------------------------------------------
+            | Finance sees all
+            |--------------------------------------------------------------------------
+            */
 
-                    ? "Procurement {$trx->category} disetujui dengan confidence {$trx->confidence}."
+                break;
+        }
 
-                    : "Procurement {$trx->category} ditolak karena margin terlalu berisiko.";
-            }
+        return $query
 
-            /*
-        |--------------------------------------------------------------------------
-        | Key Account Manager
-        |--------------------------------------------------------------------------
-        */
+            ->take(5)
 
-            if (
-                $role === 'key-account-manager'
-                &&
-                $trx->request_type === 'contract'
-            ) {
+            ->get()
 
-                $message =
-                    $trx->status === 'approved'
+            ->map(function ($item) {
 
-                    ? "Kontrak {$trx->segment} berhasil disetujui DSS."
+                return [
 
-                    : "Kontrak {$trx->segment} ditolak karena diskon melewati batas aman.";
-            }
+                    'title' =>
+                    $item->title,
 
-            if (!$message) {
-                return null;
-            }
+                    'status' =>
+                    $item->status,
 
-            return [
+                    'created_at' =>
+                    $item->created_at,
 
-                'title' =>
-                $trx->title,
+                    'message' =>
 
-                'message' =>
-                $message,
+                    ucfirst($item->request_type)
 
-                'status' =>
-                $trx->status,
+                        . ' '
 
-                'prediction' =>
-                $trx->prediction,
+                        . $item->ship_mode
 
-                'created_at' =>
-                $trx->updated_at,
-            ];
-        })->filter();
+                        . ' '
+
+                        . (
+                            $item->status === 'approved'
+                            ? 'approved'
+                            : 'ditolak'
+                        )
+
+                        . '. Prediksi profit '
+                ];
+            });
     }
 }

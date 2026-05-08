@@ -6,6 +6,7 @@ import { defaultChartOptions } from "./config";
 export function initSegmentChart(segmentData) {
     const ctx = document.getElementById("segmentChart");
 
+    console.log("SEGMENT DATA:", segmentData);
     if (!ctx || !segmentData?.length) return;
 
     new Chart(ctx, {

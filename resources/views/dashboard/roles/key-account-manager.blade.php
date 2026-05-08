@@ -1,3 +1,5 @@
+@include('dashboard.partials.kam-intelligence')
+
 <div class="flex justify-end mb-6">
 
     <a href="{{ route('requests.create') }}" class="inline-flex items-center gap-2
@@ -61,7 +63,7 @@
                                     </p>
 
                                     <span class="inline-flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded-full
-                                                                                            {{ $seg['segment'] === 'Corporate'
+                                                                                                        {{ $seg['segment'] === 'Corporate'
                     ? 'bg-blue-50 text-blue-700'
                     : 'bg-cyan-50 text-cyan-700' }}">
 
