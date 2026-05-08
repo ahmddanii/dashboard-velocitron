@@ -485,15 +485,100 @@ class DashboardController extends Controller
 
     public function createRequest()
     {
-        return view('requests.create');
+        $role = auth()->user()
+
+            ->roles
+
+            ->first()
+
+            ?->name;
+
+        /*
+        |--------------------------------------------------------------------------
+        | Role Mapping
+        |--------------------------------------------------------------------------
+        */
+
+        $requestTypeMap = [
+
+            'procurement-director' => [
+
+                'type' =>
+                'procurement',
+
+                'title' =>
+                'Create Procurement Request',
+
+                'description' =>
+                'Ajukan pengadaan inventory & supplier procurement.',
+            ],
+
+            'logistics-officer' => [
+
+                'type' =>
+                'shipment',
+
+                'title' =>
+                'Create Shipment Request',
+
+                'description' =>
+                'Ajukan distribusi & shipment approval.',
+            ],
+
+            'key-account-manager' => [
+
+                'type' =>
+                'contract',
+
+                'title' =>
+                'Create Contract Request',
+
+                'description' =>
+                'Ajukan kontrak client & discount approval.',
+            ],
+        ];
+
+        $requestMeta =
+
+            $requestTypeMap[$role]
+
+            ?? null;
+
+        abort_if(!$requestMeta, 403);
+
+        return view(
+            'requests.create',
+            compact(
+                'requestMeta'
+            )
+        );
     }
 
     public function storeRequest(Request $request)
     {
-        $request->validate([
 
-            'request_type' =>
-            'required',
+        $role = auth()->user()
+
+            ->roles
+
+            ->first()
+
+            ?->name;
+
+        $requestTypeMap = [
+
+            'procurement-director' =>
+            'procurement',
+
+            'logistics-officer' =>
+            'shipment',
+
+            'key-account-manager' =>
+            'contract',
+        ];
+
+
+        $request->validate([
 
             'title' =>
             'required|max:255',
@@ -532,7 +617,9 @@ class DashboardController extends Controller
             auth()->id(),
 
             'request_type' =>
-            $request->request_type,
+
+            $requestTypeMap[$role]
+                ?? 'unknown',
 
             'title' =>
             $request->title,

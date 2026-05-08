@@ -21,12 +21,12 @@
                 <div>
 
                     <h2 class="font-display-lg text-display-lg">
-                        Transaction Request
+                        {{ $requestMeta['title'] }}
                     </h2>
 
                     <p class="text-on-surface-variant mt-1">
 
-                        Ajukan transaksi untuk dianalisis DSS.
+                        {{ $requestMeta['description'] }}
 
                     </p>
 
@@ -87,32 +87,6 @@
                         </div>
 
                     @endif
-
-                    {{-- Request Type --}}
-                    <div>
-
-                        <label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
-                            Request Type
-                        </label>
-
-                        <select name="request_type"
-                            class="w-full px-3 py-2 bg-surface-container-low border border-outline-variant rounded-lg text-sm">
-
-                            <option value="procurement">
-                                Procurement
-                            </option>
-
-                            <option value="shipment">
-                                Shipment
-                            </option>
-
-                            <option value="contract">
-                                Client Contract
-                            </option>
-
-                        </select>
-
-                    </div>
 
                     {{-- Title --}}
                     <div>
