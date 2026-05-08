@@ -14,6 +14,8 @@
     </a>
 </div>
 
+@include('dashboard.partials.procurement-intelligence')
+
 <div class="dashboard-grid">
 
     <x-ui.card class="col-span-12 md:col-span-6 overflow-hidden">
@@ -70,7 +72,7 @@
                                     </div>
 
                                     <span class="inline-flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded-full
-                                                                                                                    {{ $cat['category'] === 'Technology'
+                                                                                                                                {{ $cat['category'] === 'Technology'
                     ? 'bg-blue-50 text-blue-700'
                     : 'bg-amber-50 text-amber-700' }}">
 

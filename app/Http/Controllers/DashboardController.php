@@ -452,6 +452,97 @@ class DashboardController extends Controller
 
             ->get();
 
+        /*
+|--------------------------------------------------------------------------
+| Procurement DSS Analytics
+|--------------------------------------------------------------------------
+*/
+
+        $totalProcurement = TransactionRequest::where(
+            'request_type',
+            'procurement'
+        )->count();
+
+        $approvedProcurement = TransactionRequest::where(
+            'request_type',
+            'procurement'
+        )
+
+            ->where(
+                'status',
+                'approved'
+            )
+
+            ->count();
+
+        /*
+|--------------------------------------------------------------------------
+| Approval Rate
+|--------------------------------------------------------------------------
+*/
+
+        $procurementApprovalRate =
+
+            $totalProcurement > 0
+
+            ? round(
+                ($approvedProcurement / $totalProcurement) * 100,
+                1
+            )
+
+            : 0;
+
+        /*
+|--------------------------------------------------------------------------
+| Most Rejected Procurement Category
+|--------------------------------------------------------------------------
+*/
+
+        $mostRejectedCategory = TransactionRequest::where(
+            'request_type',
+            'procurement'
+        )
+
+            ->where(
+                'status',
+                'rejected'
+            )
+
+            ->selectRaw('category, COUNT(*) as total')
+
+            ->groupBy('category')
+
+            ->orderByDesc('total')
+
+            ->first();
+
+        /*
+|--------------------------------------------------------------------------
+| Procurement Insights
+|--------------------------------------------------------------------------
+*/
+
+        $procurementInsights = [];
+
+        if ($procurementApprovalRate >= 70) {
+
+            $procurementInsights[] =
+
+                "Procurement approval rate stabil di {$procurementApprovalRate}%, menunjukkan supply planning masih berada dalam margin aman.";
+        } else {
+
+            $procurementInsights[] =
+
+                "Procurement rejection meningkat. DSS mendeteksi potensi risiko profitabilitas pada beberapa pengadaan.";
+        }
+
+        if ($mostRejectedCategory) {
+
+            $procurementInsights[] =
+
+                "Kategori {$mostRejectedCategory->category} menjadi procurement category dengan rejection tertinggi.";
+        }
+
         return view('dashboard.index', compact(
             'summary',
             'category',
@@ -469,8 +560,18 @@ class DashboardController extends Controller
             $this->getIntelligenceFeed(
                 'procurement-director'
             ),
+            'procurementAnalytics' => [
 
+                'approval_rate' =>
+                $procurementApprovalRate,
 
+                'risky_category' =>
+                $mostRejectedCategory?->category
+                    ?? '-',
+            ],
+
+            'procurementInsights' =>
+            $procurementInsights,
             'dashboardData' => [
 
                 'role' => 'procurement-director',
