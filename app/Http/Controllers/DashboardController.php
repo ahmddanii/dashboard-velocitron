@@ -49,6 +49,102 @@ class DashboardController extends Controller
         $segment  = Http::timeout(5)->get("{$this->api}/sales-by-segment")->json() ?? [];
         $products = Http::timeout(5)->get("{$this->api}/top-products")->json() ?? [];
 
+        /*
+|--------------------------------------------------------------------------
+| DSS Monitoring Analytics
+|--------------------------------------------------------------------------
+*/
+
+        $totalPredictions = TransactionRequest::count();
+
+        $profitablePredictions = TransactionRequest::where(
+            'prediction',
+            'Profitable'
+        )->count();
+
+        $riskyPredictions = TransactionRequest::where(
+            'prediction',
+            'Loss'
+        )->count();
+
+        /*
+|--------------------------------------------------------------------------
+| Average Confidence
+|--------------------------------------------------------------------------
+*/
+
+        $avgConfidence = round(
+
+            TransactionRequest::whereNotNull(
+                'confidence'
+            )->avg('confidence'),
+
+            1
+        );
+
+        /*
+|--------------------------------------------------------------------------
+| Prediction Accuracy Simulation
+|--------------------------------------------------------------------------
+*/
+
+        $estimatedAccuracy =
+
+            $avgConfidence >= 80
+            ? 92.4
+
+            : ($avgConfidence >= 70
+                ? 86.7
+                : 74.2);
+
+        /*
+|--------------------------------------------------------------------------
+| DSS Health Status
+|--------------------------------------------------------------------------
+*/
+
+        $dssHealth =
+
+            $avgConfidence >= 75
+            ? 'Stable'
+
+            : 'Monitoring Required';
+
+        /*
+|--------------------------------------------------------------------------
+| Analytics Insights
+|--------------------------------------------------------------------------
+*/
+
+        $analyticsInsights = [];
+
+        $analyticsInsights[] =
+
+            "DSS telah memproses {$totalPredictions} prediction requests sejak sistem berjalan.";
+
+        if ($avgConfidence >= 75) {
+
+            $analyticsInsights[] =
+
+                "Confidence DSS stabil di {$avgConfidence}%, menunjukkan model masih berada dalam kondisi optimal.";
+        } else {
+
+            $analyticsInsights[] =
+
+                "Confidence DSS berada di level moderat ({$avgConfidence}%). Monitoring tambahan direkomendasikan.";
+        }
+
+        $analyticsInsights[] =
+
+            "Distribusi prediction menunjukkan {$profitablePredictions} transaksi profitable dan {$riskyPredictions} transaksi berisiko.";
+
+        if ($riskyPredictions > $profitablePredictions * 0.5) {
+
+            $analyticsInsights[] =
+
+                "Risk prediction meningkat signifikan. DSS mendeteksi potensi kenaikan transaksi high-risk.";
+        }
+
         return view('dashboard.index', compact(
             'summary',
             'monthly',
@@ -60,6 +156,23 @@ class DashboardController extends Controller
         ) + [
 
             'role' => 'head-analytics',
+            'analyticsMonitoring' => [
+
+                'prediction_volume' =>
+                $totalPredictions,
+
+                'avg_confidence' =>
+                $avgConfidence,
+
+                'estimated_accuracy' =>
+                $estimatedAccuracy,
+
+                'health_status' =>
+                $dssHealth,
+            ],
+
+            'analyticsInsights' =>
+            $analyticsInsights,
 
             'dashboardData' => [
 

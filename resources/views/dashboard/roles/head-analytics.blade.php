@@ -1,3 +1,5 @@
+@include('dashboard.partials.analytics-monitoring')
+
 <div class="flex justify-end mb-6">
     <a href="{{ route('requests.pending') }}" class="inline-flex items-center gap-2
         px-4 py-2 rounded-lg
