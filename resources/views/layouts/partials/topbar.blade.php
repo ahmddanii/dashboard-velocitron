@@ -25,12 +25,6 @@
             </button>
         </div>
 
-        <button class="text-slate-500 text-sm font-semibold hover:text-slate-900 transition-all">Docs</button>
-
-        <button
-            class="bg-secondary text-white px-4 py-1.5 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-all">
-            Deploy
-        </button>
 
         {{-- User Avatar + Logout --}}
         <div class="ml-2 pl-4 border-l border-slate-200 relative group">

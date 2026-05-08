@@ -159,6 +159,10 @@ class DashboardController extends Controller
             'category' => [],
             'segment' => [],
             'products' => [],
+            'intelligenceFeed' =>
+            $this->getIntelligenceFeed(
+                'logistics-officer'
+            ),
 
             'dashboardData' => [
 
@@ -171,6 +175,7 @@ class DashboardController extends Controller
                 'region' => $region,
 
                 'segment' => [],
+
             ]
         ]);
     }
@@ -237,6 +242,11 @@ class DashboardController extends Controller
             'yearly' => [],
             'region' => [],
             'segment' => [],
+            'intelligenceFeed' =>
+            $this->getIntelligenceFeed(
+                'procurement-director'
+            ),
+
 
             'dashboardData' => [
 
@@ -249,6 +259,7 @@ class DashboardController extends Controller
                 'region' => [],
 
                 'segment' => [],
+
             ]
         ]);
     }
@@ -314,6 +325,9 @@ class DashboardController extends Controller
             'yearly' => [],
             'category' => [],
             'products' => [],
+            $this->getIntelligenceFeed(
+                'key-account-manager'
+            ),
 
             'dashboardData' => [
 
@@ -326,6 +340,8 @@ class DashboardController extends Controller
                 'region' => $region,
 
                 'segment' => $segment,
+
+
             ]
         ]);
     }
@@ -619,6 +635,15 @@ class DashboardController extends Controller
                     $requestData->ship_mode,
                 ]);
 
+
+            $requestData->update([
+
+                'prediction' =>
+                $result['label_id'] ?? null,
+
+                'confidence' =>
+                $result['confidence'] ?? null,
+            ]);
             $result = $response->json();
         } catch (\Exception $e) {
 
@@ -678,5 +703,128 @@ class DashboardController extends Controller
                 'success',
                 'Request berhasil di-reject.'
             );
+    }
+
+    public function transactionHistory()
+    {
+        $transactions = TransactionRequest::latest()
+
+            ->whereIn('status', [
+                'approved',
+                'rejected'
+            ])
+
+            ->with([
+                'requester',
+                'approver'
+            ])
+
+            ->get();
+
+        return view(
+            'transactions.history',
+            compact('transactions')
+        );
+    }
+
+    private function getIntelligenceFeed($role)
+    {
+        $transactions = TransactionRequest::latest()
+
+            ->whereIn('status', [
+                'approved',
+                'rejected'
+            ])
+
+            ->take(10)
+
+            ->get();
+
+        return $transactions->map(function ($trx) use ($role) {
+
+            $message = null;
+
+            /*
+        |--------------------------------------------------------------------------
+        | Logistics Officer
+        |--------------------------------------------------------------------------
+        */
+
+            if (
+                $role === 'logistics-officer'
+                &&
+                $trx->request_type === 'shipment'
+            ) {
+
+                $message =
+                    $trx->status === 'approved'
+
+                    ? "Shipment {$trx->ship_mode} approved. Prediksi profit {$trx->prediction}."
+
+                    : "Shipment {$trx->ship_mode} ditolak karena risiko profit rendah.";
+            }
+
+            /*
+        |--------------------------------------------------------------------------
+        | Procurement Director
+        |--------------------------------------------------------------------------
+        */
+
+            if (
+                $role === 'procurement-director'
+                &&
+                $trx->request_type === 'procurement'
+            ) {
+
+                $message =
+                    $trx->status === 'approved'
+
+                    ? "Procurement {$trx->category} disetujui dengan confidence {$trx->confidence}."
+
+                    : "Procurement {$trx->category} ditolak karena margin terlalu berisiko.";
+            }
+
+            /*
+        |--------------------------------------------------------------------------
+        | Key Account Manager
+        |--------------------------------------------------------------------------
+        */
+
+            if (
+                $role === 'key-account-manager'
+                &&
+                $trx->request_type === 'contract'
+            ) {
+
+                $message =
+                    $trx->status === 'approved'
+
+                    ? "Kontrak {$trx->segment} berhasil disetujui DSS."
+
+                    : "Kontrak {$trx->segment} ditolak karena diskon melewati batas aman.";
+            }
+
+            if (!$message) {
+                return null;
+            }
+
+            return [
+
+                'title' =>
+                $trx->title,
+
+                'message' =>
+                $message,
+
+                'status' =>
+                $trx->status,
+
+                'prediction' =>
+                $trx->prediction,
+
+                'created_at' =>
+                $trx->updated_at,
+            ];
+        })->filter();
     }
 }

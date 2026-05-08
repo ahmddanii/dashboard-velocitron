@@ -12,20 +12,6 @@
         Create Request
 
     </a>
-
-    <a href="{{ route('requests.pending') }}" class="inline-flex items-center gap-2
-        px-4 py-2 rounded-lg
-        bg-secondary text-white
-        text-sm font-semibold">
-
-        <span class="material-symbols-outlined">
-            pending_actions
-        </span>
-
-        Pending Requests
-
-    </a>
-
 </div>
 
 <div class="dashboard-grid">
@@ -75,7 +61,7 @@
                                     </p>
 
                                     <span class="inline-flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded-full
-                                                                                {{ $seg['segment'] === 'Corporate'
+                                                                                            {{ $seg['segment'] === 'Corporate'
                     ? 'bg-blue-50 text-blue-700'
                     : 'bg-cyan-50 text-cyan-700' }}">
 

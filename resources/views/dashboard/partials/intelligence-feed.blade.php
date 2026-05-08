@@ -1,4 +1,4 @@
-<x-ui.card class="overflow-hidden">
+<x-ui.card class="col-span-12 overflow-hidden">
 
     <div class="dashboard-card-header">
 
@@ -10,51 +10,71 @@
 
     <div class="dashboard-card-body">
 
-        <div class="space-y-3">
+        <div class="space-y-4">
 
-            @forelse($strategies as $strategy)
+            @forelse($intelligenceFeed as $feed)
 
-                <div class="p-4 rounded-lg border border-outline-variant">
+                    <div class="p-4 rounded-xl border border-outline-variant">
 
-                    <div class="flex items-start gap-3">
+                        <div class="flex items-start gap-3">
 
-                        <div
-                            class="w-10 h-10 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center
 
-                            <span class="material-symbols-outlined">
-                                tips_and_updates
-                            </span>
+                                    {{ $feed['status'] === 'approved'
+                ? 'bg-green-100 text-green-600'
+                : 'bg-red-100 text-red-600' }}">
 
-                        </div>
+                                <span class="material-symbols-outlined material-icon-fill">
 
-                        <div>
+                                    {{ $feed['status'] === 'approved'
+                ? 'check_circle'
+                : 'warning' }}
 
-                            <p class="font-semibold">
-                                {{ $strategy->title }}
-                            </p>
+                                </span>
 
-                            <p class="text-sm text-on-surface-variant mt-1">
-                                {{ $strategy->recommendation }}
-                            </p>
+                            </div>
 
-                            <p class="text-xs text-slate-400 mt-2">
+                            <div class="flex-1">
 
-                                Confidence:
-                                {{ $strategy->confidence }}%
+                                <div class="flex justify-between items-start gap-4">
 
-                            </p>
+                                    <div>
+
+                                        <p class="font-semibold">
+
+                                            {{ $feed['title'] }}
+
+                                        </p>
+
+                                        <p class="text-sm text-on-surface-variant mt-1 leading-relaxed">
+
+                                            {{ $feed['message'] }}
+
+                                        </p>
+
+                                    </div>
+
+                                    <span class="text-xs text-on-surface-variant whitespace-nowrap">
+
+                                        {{ \Carbon\Carbon::parse($feed['created_at'])->diffForHumans() }}
+
+                                    </span>
+
+                                </div>
+
+                            </div>
 
                         </div>
 
                     </div>
 
-                </div>
-
             @empty
 
-                <p class="text-sm text-slate-400">
+                <div class="text-center py-8 text-on-surface-variant">
+
                     Belum ada rekomendasi DSS.
-                </p>
+
+                </div>
 
             @endforelse
 

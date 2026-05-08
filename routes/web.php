@@ -55,7 +55,10 @@ Route::middleware(['auth'])->group(function () {
         [DashboardController::class, 'rejectRequest']
     )->name('requests.reject');
 
-    
+    Route::get(
+        '/transactions/history',
+        [DashboardController::class, 'transactionHistory']
+    )->name('transactions.history');
 });
 
 require __DIR__ . '/auth.php';

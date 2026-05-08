@@ -2,8 +2,8 @@
     class="fixed left-0 top-0 h-full w-64 border-r border-slate-800 bg-slate-900 flex flex-col py-6 z-50">
     <div class="px-6 mb-8">
         <a href="{{ route('dashboard') }}" class="block">
-            <h1 class="text-lg font-bold text-white tracking-wider uppercase hover:text-blue-400 transition-colors">
-                Superstore BI</h1>
+            <h1 class="text-xl font-bold text-white tracking-wider uppercase hover:text-blue-400 transition-colors">
+                VELOCITRON</h1>
         </a>
         <p class="text-xs text-slate-400 font-medium uppercase tracking-widest mt-1">Business Intelligence</p>
     </div>
@@ -18,7 +18,7 @@
         @if(auth()->user()->hasAnyRole(['head-analytics', 'financial-controller']))
             <a href="{{ route('dashboard.dss') }}"
                 class="sidebar-item flex items-center px-4 py-2 mx-2 rounded-md text-sm font-medium tracking-tight duration-200
-              {{ request()->routeIs('dashboard.dss') ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/50' }}">
+                              {{ request()->routeIs('dashboard.dss') ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/50' }}">
                 <span class="material-symbols-outlined mr-3">psychology</span> Prediksi DSS
             </a>
         @endif
