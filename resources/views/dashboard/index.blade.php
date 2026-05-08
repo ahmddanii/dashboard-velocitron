@@ -4,6 +4,7 @@
 
 @section('content')
 
+
     <div class="p-6">
 
         <div class="max-w-[1440px] mx-auto">
@@ -11,7 +12,7 @@
             <script type="application/json" id="dashboard-context">
 
                 @json($dashboardData)
-
+                
             </script>
 
             {{-- Error: Flask tidak jalan --}}

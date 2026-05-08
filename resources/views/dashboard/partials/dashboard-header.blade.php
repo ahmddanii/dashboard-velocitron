@@ -41,12 +41,4 @@
         </p>
     </div>
 
-    {{-- Tombol DSS hanya untuk 2 role --}}
-    @if(in_array($role, ['head-analytics', 'financial-controller']))
-        <a href="{{ route('dashboard.dss') }}"
-            class="flex items-center gap-2 px-4 py-2 bg-secondary text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-all shrink-0">
-            <span class="material-symbols-outlined text-sm">psychology</span>
-            Buka DSS
-        </a>
-    @endif
 </div>

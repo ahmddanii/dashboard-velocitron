@@ -1,4 +1,6 @@
 @include('dashboard.partials.dss-analytics')
+@include('dashboard.partials.dss-trend-chart')
+@include('dashboard.partials.executive-insights')
 
 <div class="dashboard-grid">
 

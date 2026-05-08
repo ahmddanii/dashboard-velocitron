@@ -187,6 +187,102 @@ class DashboardController extends Controller
 
             ->first();
 
+
+        /*
+        |--------------------------------------------------------------------------
+        | DSS Decision Trend
+        |--------------------------------------------------------------------------
+        */
+
+        $dssTrend = TransactionRequest::selectRaw('
+        DATE(created_at) as date,
+        SUM(CASE WHEN status = "approved" THEN 1 ELSE 0 END) as approved,
+        SUM(CASE WHEN status = "rejected" THEN 1 ELSE 0 END) as rejected
+    ')
+
+            ->groupBy('date')
+
+            ->orderBy('date')
+
+            ->take(10)
+
+            ->get();
+
+        /*
+|--------------------------------------------------------------------------
+| Executive Insight Narrative
+|--------------------------------------------------------------------------
+*/
+
+        $executiveInsights = [];
+
+        /*
+|--------------------------------------------------------------------------
+| Approval Insight
+|--------------------------------------------------------------------------
+*/
+
+        if ($approvalRate >= 70) {
+
+            $executiveInsights[] =
+
+                "Approval rate DSS saat ini stabil di {$approvalRate}%, menunjukkan mayoritas transaksi masih berada dalam margin aman.";
+        } elseif ($approvalRate >= 50) {
+
+            $executiveInsights[] =
+
+                "Approval rate berada di level moderat ({$approvalRate}%). Beberapa transaksi mulai menunjukkan peningkatan risiko profitabilitas.";
+        } else {
+
+            $executiveInsights[] =
+
+                "Approval rate rendah ({$approvalRate}%). DSS mendeteksi peningkatan transaksi berisiko tinggi.";
+        }
+
+        /*
+|--------------------------------------------------------------------------
+| Risky Category Insight
+|--------------------------------------------------------------------------
+*/
+
+        if ($riskyCategory) {
+
+            $executiveInsights[] =
+
+                "Kategori {$riskyCategory->category} menjadi sumber rejection tertinggi berdasarkan historical DSS decisions.";
+        }
+
+        /*
+|--------------------------------------------------------------------------
+| Ship Mode Insight
+|--------------------------------------------------------------------------
+*/
+
+        if ($riskyShipMode) {
+
+            $executiveInsights[] =
+
+                "Ship mode {$riskyShipMode->ship_mode} menunjukkan tingkat risiko operasional tertinggi.";
+        }
+
+        /*
+|--------------------------------------------------------------------------
+| Confidence Insight
+|--------------------------------------------------------------------------
+*/
+
+        if ($avgConfidence >= 75) {
+
+            $executiveInsights[] =
+
+                "Confidence DSS berada di level tinggi ({$avgConfidence}%), menunjukkan stabilitas prediksi model.";
+        } else {
+
+            $executiveInsights[] =
+
+                "Confidence DSS masih berada di level moderat ({$avgConfidence}%). Monitoring tambahan direkomendasikan.";
+        }
+
         return view('dashboard.index', compact(
             'summary',
             'region',
@@ -211,6 +307,7 @@ class DashboardController extends Controller
                 'region' => $region,
 
                 'segment' => [],
+                'dss_trend' => $dssTrend,
             ],
 
             'dssAnalytics' => [
@@ -231,7 +328,11 @@ class DashboardController extends Controller
                 'risky_ship_mode' =>
                 $riskyShipMode?->ship_mode
                     ?? '-',
-            ]
+            ],
+
+            'executiveInsights' =>
+            $executiveInsights,
+
         ]);
     }
 
