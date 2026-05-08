@@ -1,17 +1,4 @@
-<div class="flex justify-end mb-6">
-    <a href="{{ route('requests.pending') }}" class="inline-flex items-center gap-2
-        px-4 py-2 rounded-lg
-        bg-secondary text-white
-        text-sm font-semibold">
-
-        <span class="material-symbols-outlined">
-            pending_actions
-        </span>
-
-        Pending Requests
-
-    </a>
-</div>
+@include('dashboard.partials.dss-analytics')
 
 <div class="dashboard-grid">
 
@@ -97,14 +84,14 @@
 
             </div>
 
-            <a href="{{ route('dashboard.dss') }}"
+            <a href="{{ route('requests.pending') }}"
                 class="mt-6 inline-flex items-center gap-2 bg-white text-secondary px-4 py-2.5 rounded-lg text-sm font-bold hover:bg-blue-50 transition-all w-fit">
 
                 <span class="material-symbols-outlined material-icon text-sm">
                     psychology
                 </span>
 
-                Buka Form Prediksi DSS
+                Lihat Request Transaksi
 
             </a>
 

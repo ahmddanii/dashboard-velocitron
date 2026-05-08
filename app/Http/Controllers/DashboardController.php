@@ -85,6 +85,108 @@ class DashboardController extends Controller
         $category = Http::timeout(5)->get("{$this->api}/profit-by-category")->json() ?? [];
         $yearly   = Http::timeout(5)->get("{$this->api}/yearly-trend")->json() ?? [];
 
+
+        /*
+|--------------------------------------------------------------------------
+| DSS Analytics
+|--------------------------------------------------------------------------
+*/
+
+        $totalTransactions = TransactionRequest::count();
+
+        $approvedCount = TransactionRequest::where(
+            'status',
+            'approved'
+        )->count();
+
+        $rejectedCount = TransactionRequest::where(
+            'status',
+            'rejected'
+        )->count();
+
+        /*
+|--------------------------------------------------------------------------
+| Rates
+|--------------------------------------------------------------------------
+*/
+
+        $approvalRate =
+
+            $totalTransactions > 0
+
+            ? round(
+                ($approvedCount / $totalTransactions) * 100,
+                1
+            )
+
+            : 0;
+
+        $rejectionRate =
+
+            $totalTransactions > 0
+
+            ? round(
+                ($rejectedCount / $totalTransactions) * 100,
+                1
+            )
+
+            : 0;
+
+        /*
+|--------------------------------------------------------------------------
+| Average Confidence
+|--------------------------------------------------------------------------
+*/
+
+        $avgConfidence = round(
+
+            TransactionRequest::whereNotNull(
+                'confidence'
+            )
+
+                ->avg('confidence'),
+
+            1
+        );
+
+        /*
+|--------------------------------------------------------------------------
+| Most Risky Category
+|--------------------------------------------------------------------------
+*/
+
+        $riskyCategory = TransactionRequest::where(
+            'status',
+            'rejected'
+        )
+
+            ->selectRaw('category, COUNT(*) as total')
+
+            ->groupBy('category')
+
+            ->orderByDesc('total')
+
+            ->first();
+
+        /*
+|--------------------------------------------------------------------------
+| Most Risky Ship Mode
+|--------------------------------------------------------------------------
+*/
+
+        $riskyShipMode = TransactionRequest::where(
+            'status',
+            'rejected'
+        )
+
+            ->selectRaw('ship_mode, COUNT(*) as total')
+
+            ->groupBy('ship_mode')
+
+            ->orderByDesc('total')
+
+            ->first();
+
         return view('dashboard.index', compact(
             'summary',
             'region',
@@ -109,6 +211,26 @@ class DashboardController extends Controller
                 'region' => $region,
 
                 'segment' => [],
+            ],
+
+            'dssAnalytics' => [
+
+                'approval_rate' =>
+                $approvalRate,
+
+                'rejection_rate' =>
+                $rejectionRate,
+
+                'avg_confidence' =>
+                $avgConfidence,
+
+                'risky_category' =>
+                $riskyCategory?->category
+                    ?? '-',
+
+                'risky_ship_mode' =>
+                $riskyShipMode?->ship_mode
+                    ?? '-',
             ]
         ]);
     }
@@ -750,9 +872,68 @@ class DashboardController extends Controller
     {
         $requestData = TransactionRequest::findOrFail($id);
 
+        /*
+    |--------------------------------------------------------------------------
+    | DSS Prediction
+    |--------------------------------------------------------------------------
+    */
+
+        try {
+
+            $response = Http::timeout(10)
+
+                ->post("{$this->api}/predict-profit", [
+
+                    'sales' =>
+                    (float) $requestData->sales,
+
+                    'quantity' =>
+                    (int) $requestData->quantity,
+
+                    'discount' =>
+                    (float) $requestData->discount,
+
+                    'shipping_days' =>
+                    (int) $requestData->shipping_days,
+
+                    'category' =>
+                    $requestData->category,
+
+                    'segment' =>
+                    $requestData->segment,
+
+                    'region' =>
+                    $requestData->region,
+
+                    'ship_mode' =>
+                    $requestData->ship_mode,
+                ]);
+
+            $result = $response->json();
+        } catch (\Exception $e) {
+
+            $result = null;
+        }
+
+        /*
+    |--------------------------------------------------------------------------
+    | Update Transaction
+    |--------------------------------------------------------------------------
+    */
+
         $requestData->update([
 
             'status' => 'approved',
+
+            'prediction' =>
+
+            $result['label_id']
+                ?? null,
+
+            'confidence' =>
+
+            $result['prob_profitable']
+                ?? null,
 
             'approved_by' => auth()->id(),
 
@@ -773,9 +954,68 @@ class DashboardController extends Controller
     {
         $requestData = TransactionRequest::findOrFail($id);
 
+        /*
+    |--------------------------------------------------------------------------
+    | DSS Prediction
+    |--------------------------------------------------------------------------
+    */
+
+        try {
+
+            $response = Http::timeout(10)
+
+                ->post("{$this->api}/predict-profit", [
+
+                    'sales' =>
+                    (float) $requestData->sales,
+
+                    'quantity' =>
+                    (int) $requestData->quantity,
+
+                    'discount' =>
+                    (float) $requestData->discount,
+
+                    'shipping_days' =>
+                    (int) $requestData->shipping_days,
+
+                    'category' =>
+                    $requestData->category,
+
+                    'segment' =>
+                    $requestData->segment,
+
+                    'region' =>
+                    $requestData->region,
+
+                    'ship_mode' =>
+                    $requestData->ship_mode,
+                ]);
+
+            $result = $response->json();
+        } catch (\Exception $e) {
+
+            $result = null;
+        }
+
+        /*
+    |--------------------------------------------------------------------------
+    | Update Transaction
+    |--------------------------------------------------------------------------
+    */
+
         $requestData->update([
 
             'status' => 'rejected',
+
+            'prediction' =>
+
+            $result['label_id']
+                ?? null,
+
+            'confidence' =>
+
+            $result['prob_profitable']
+                ?? null,
 
             'approved_by' => auth()->id(),
 
@@ -794,7 +1034,21 @@ class DashboardController extends Controller
 
     public function transactionHistory()
     {
-        $transactions = TransactionRequest::latest()
+        $role = auth()->user()
+
+            ->roles
+
+            ->first()
+
+            ?->name;
+
+        /*
+    |--------------------------------------------------------------------------
+    | Base Query
+    |--------------------------------------------------------------------------
+    */
+
+        $query = TransactionRequest::latest()
 
             ->whereIn('status', [
                 'approved',
@@ -804,13 +1058,52 @@ class DashboardController extends Controller
             ->with([
                 'requester',
                 'approver'
-            ])
+            ]);
 
-            ->get();
+        /*
+    |--------------------------------------------------------------------------
+    | Role-Based Visibility
+    |--------------------------------------------------------------------------
+    */
+
+        if ($role === 'procurement-director') {
+
+            $query->where(
+                'request_type',
+                'procurement'
+            );
+        } elseif ($role === 'logistics-officer') {
+
+            $query->where(
+                'request_type',
+                'shipment'
+            );
+        } elseif ($role === 'key-account-manager') {
+
+            $query->where(
+                'request_type',
+                'contract'
+            );
+        }
+
+        /*
+    |--------------------------------------------------------------------------
+    | Financial Controller
+    |--------------------------------------------------------------------------
+    */
+
+        // financial-controller
+        // sees all transactions
+
+        $transactions = $query
+
+            ->paginate(15);
 
         return view(
             'transactions.history',
-            compact('transactions')
+            compact(
+                'transactions'
+            )
         );
     }
 

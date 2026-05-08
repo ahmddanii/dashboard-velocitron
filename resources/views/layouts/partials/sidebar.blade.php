@@ -9,6 +9,38 @@
     </div>
 
     <nav class="flex-1 space-y-1">
+
+        @php
+
+            $role = auth()->user()
+
+                ->roles
+
+                ->first()
+
+                    ?->name;
+
+            $historyLabel = match ($role) {
+
+                'procurement-director' =>
+
+                'Procurement History',
+
+                'logistics-officer' =>
+
+                'Shipment History',
+
+                'key-account-manager' =>
+
+                'Contract History',
+
+                default =>
+
+                'Transaction History',
+            };
+
+        @endphp
+
         <a href="{{ route('dashboard') }}"
             class="sidebar-item flex items-center px-4 py-2 mx-2 rounded-md text-sm font-medium tracking-tight duration-200
                   {{ request()->routeIs('dashboard') ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/50' }}">
@@ -18,10 +50,23 @@
         @if(auth()->user()->hasAnyRole(['head-analytics', 'financial-controller']))
             <a href="{{ route('dashboard.dss') }}"
                 class="sidebar-item flex items-center px-4 py-2 mx-2 rounded-md text-sm font-medium tracking-tight duration-200
-                              {{ request()->routeIs('dashboard.dss') ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/50' }}">
+                                      {{ request()->routeIs('dashboard.dss') ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/50' }}">
                 <span class="material-symbols-outlined mr-3">psychology</span> Prediksi DSS
             </a>
         @endif
+
+        <a href="{{ route('transactions.history') }}" class="sidebar-item flex items-center px-4 py-2 mx-2 rounded-md text-sm font-medium tracking-tight duration-200
+    {{ request()->routeIs('transactions.history')
+    ? 'bg-blue-600 text-white'
+    : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/50' }}">
+
+            <span class="material-symbols-outlined mr-3">
+                history
+            </span>
+
+            {{ $historyLabel }}
+
+        </a>
     </nav>
 
     <div class="mt-auto space-y-1 border-t border-slate-800 pt-4">
