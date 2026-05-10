@@ -20,7 +20,7 @@
 
                             <div class="w-10 h-10 rounded-full flex items-center justify-center
 
-                                    {{ $feed['status'] === 'approved'
+                                            {{ $feed['status'] === 'approved'
                 ? 'bg-green-100 text-green-600'
                 : 'bg-red-100 text-red-600' }}">
 
@@ -43,6 +43,7 @@
                                         <p class="font-semibold">
 
                                             {{ $feed['title'] }}
+                                            <x-ui.status-badge :status="$feed['status']" />
 
                                         </p>
 

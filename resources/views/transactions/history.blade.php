@@ -31,10 +31,10 @@
             <div class="flex justify-end mb-6">
 
                 <a href="{{ route('transactions.export') }}" class="inline-flex items-center gap-2
-                    px-4 py-2 rounded-xl
-                    bg-green-600 text-white
-                    text-sm font-semibold
-                    hover:bg-green-700 transition">
+                        px-4 py-2 rounded-xl
+                        bg-green-600 text-white
+                        text-sm font-semibold
+                        hover:bg-green-700 transition">
 
                     <span class="material-symbols-outlined">
 
@@ -104,114 +104,96 @@
 
                             @forelse($transactions as $trx)
 
-                                                <tr class="border-b border-outline-variant">
+                                <tr class="border-b border-outline-variant">
 
-                                                    {{-- Transaction --}}
-                                                    <td class="py-4">
+                                    {{-- Transaction --}}
+                                    <td class="py-4">
 
-                                                        <div>
+                                        <div>
 
-                                                            <p class="font-semibold">
-                                                                {{ $trx->title }}
-                                                            </p>
+                                            <p class="font-semibold">
+                                                {{ $trx->title }}
+                                            </p>
 
-                                                            <p class="text-xs text-on-surface-variant mt-1">
+                                            <p class="text-xs text-on-surface-variant mt-1">
 
-                                                                {{ $trx->request_type }}
+                                                {{ $trx->request_type }}
 
-                                                            </p>
+                                            </p>
 
-                                                        </div>
+                                        </div>
 
-                                                    </td>
+                                    </td>
 
-                                                    {{-- Requester --}}
-                                                    <td class="py-4">
+                                    {{-- Requester --}}
+                                    <td class="py-4">
 
-                                                        {{ $trx->requester->name }}
+                                        {{ $trx->requester->name }}
 
-                                                    </td>
+                                    </td>
 
-                                                    {{-- Prediction --}}
-                                                    <td class="py-4">
+                                    {{-- Prediction --}}
+                                    <td class="py-4">
 
-                                                        @if($trx->prediction)
+                                        @if($trx->prediction)
 
-                                                                                <span class="inline-flex items-center gap-1.5
-                                                                                                                                                                                                                                                                                            px-2 py-1 rounded-full text-xs font-bold
+                                                                <span class="inline-flex items-center gap-1.5
+                                                                                                                                                                                                                                                                                                                            px-2 py-1 rounded-full text-xs font-bold
 
-                                                                                                                                                                                                                                                                                            {{ $trx->prediction == 'Menguntungkan'
-                                                            ? 'bg-green-100 text-green-700'
-                                                            : 'bg-red-100 text-red-700' }}">
+                                                                                                                                                                                                                                                                                                                            {{ $trx->prediction == 'Menguntungkan'
+                                            ? 'bg-green-100 text-green-700'
+                                            : 'bg-red-100 text-red-700' }}">
 
-                                                                                    <span class="material-symbols-outlined text-sm">
+                                                                    <span class="material-symbols-outlined text-sm">
 
-                                                                                        {{ $trx->prediction == 'Menguntungkan'
-                                                            ? 'trending_up'
-                                                            : 'warning' }}
+                                                                        {{ $trx->prediction == 'Menguntungkan'
+                                            ? 'trending_up'
+                                            : 'warning' }}
 
-                                                                                    </span>
+                                                                    </span>
 
-                                                                                    {{ $trx->prediction }}
+                                                                    {{ $trx->prediction }}
 
-                                                                                </span>
+                                                                </span>
 
-                                                        @else
+                                        @else
 
-                                                            <span class="text-slate-400">
-                                                                -
-                                                            </span>
+                                            <span class="text-slate-400">
+                                                -
+                                            </span>
 
-                                                        @endif
+                                        @endif
 
-                                                    </td>
+                                    </td>
 
-                                                    {{-- Confidence --}}
-                                                    <td class="py-4">
+                                    {{-- Confidence --}}
+                                    <td class="py-4">
 
-                                                        {{ $trx->confidence ?? '-' }}
+                                        {{ $trx->confidence ?? '-' }}
 
-                                                    </td>
+                                    </td>
 
-                                                    {{-- Status --}}
-                                                    <td class="py-4">
+                                    {{-- Status --}}
+                                    <td class="py-4">
 
-                                                        <span class="inline-flex items-center gap-1.5
-                                                                                                                                                                px-2 py-1 rounded-full text-xs font-bold
+                                        <x-ui.status-badge :status="$trx->status" />
+                                    </td>
 
-                                                                                                                                                                {{ $trx->status == 'approved'
-                                ? 'bg-green-100 text-green-700'
-                                : 'bg-red-100 text-red-700' }}">
+                                    {{-- Approver --}}
+                                    <td class="py-4">
 
-                                                            <span class="material-symbols-outlined text-sm">
+                                        {{ $trx->approver->name ?? '-' }}
 
-                                                                {{ $trx->status == 'approved'
-                                ? 'check_circle'
-                                : 'cancel' }}
+                                    </td>
 
-                                                            </span>
+                                    {{-- Date --}}
+                                    <td class="py-4 text-on-surface-variant">
 
-                                                            {{ ucfirst($trx->status) }}
+                                        {{ optional($trx->approved_at)->format('d M Y H:i') }}
 
-                                                        </span>
+                                    </td>
 
-                                                    </td>
-
-                                                    {{-- Approver --}}
-                                                    <td class="py-4">
-
-                                                        {{ $trx->approver->name ?? '-' }}
-
-                                                    </td>
-
-                                                    {{-- Date --}}
-                                                    <td class="py-4 text-on-surface-variant">
-
-                                                        {{ optional($trx->approved_at)->format('d M Y H:i') }}
-
-                                                    </td>
-
-                                                </tr>
+                                </tr>
 
                             @empty
 
