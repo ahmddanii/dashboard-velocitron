@@ -1,21 +1,5 @@
 @include('dashboard.partials.kam-intelligence')
 
-<div class="flex justify-end mb-6">
-
-    <a href="{{ route('requests.create') }}" class="inline-flex items-center gap-2
-        px-4 py-2 rounded-lg
-        bg-secondary text-white
-        text-sm font-semibold hover:opacity-90 transition">
-
-        <span class="material-symbols-outlined">
-            add
-        </span>
-
-        Create Request
-
-    </a>
-</div>
-
 <div class="dashboard-grid">
 
     <x-ui.card class="col-span-12 md:col-span-6 overflow-hidden">
@@ -52,77 +36,72 @@
 
             <div class="space-y-4">
 
-                @foreach($segment as $seg)
+                @foreach ($segment as $seg)
+                    <div class="p-4 border border-outline-variant rounded-lg">
 
-                            <div class="p-4 border border-outline-variant rounded-lg">
+                        <div class="flex justify-between items-center mb-3">
 
-                                <div class="flex justify-between items-center mb-3">
+                            <p class="font-semibold text-on-surface">
+                                {{ $seg['segment'] }}
+                            </p>
 
-                                    <p class="font-semibold text-on-surface">
-                                        {{ $seg['segment'] }}
-                                    </p>
+                            <span
+                                class="inline-flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded-full
+                                                                                                        {{ $seg['segment'] === 'Corporate' ? 'bg-blue-50 text-blue-700' : 'bg-cyan-50 text-cyan-700' }}">
 
-                                    <span class="inline-flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded-full
-                                                                                                        {{ $seg['segment'] === 'Corporate'
-                    ? 'bg-blue-50 text-blue-700'
-                    : 'bg-cyan-50 text-cyan-700' }}">
+                                <span class="material-symbols-outlined material-icon text-sm">
 
-                                        <span class="material-symbols-outlined material-icon text-sm">
+                                    {{ $seg['segment'] === 'Corporate' ? 'apartment' : 'home_work' }}
 
-                                            {{ $seg['segment'] === 'Corporate'
-                    ? 'apartment'
-                    : 'home_work' }}
+                                </span>
 
-                                        </span>
+                                {{ $seg['segment'] }}
 
-                                        {{ $seg['segment'] }}
+                            </span>
 
-                                    </span>
+                        </div>
 
-                                </div>
+                        <div class="grid grid-cols-3 gap-2 text-sm">
 
-                                <div class="grid grid-cols-3 gap-2 text-sm">
+                            <div>
 
-                                    <div>
+                                <p class="text-on-surface-variant text-xs">
+                                    Sales
+                                </p>
 
-                                        <p class="text-on-surface-variant text-xs">
-                                            Sales
-                                        </p>
-
-                                        <p class="font-bold">
-                                            ${{ number_format($seg['total_sales'], 0) }}
-                                        </p>
-
-                                    </div>
-
-                                    <div>
-
-                                        <p class="text-on-surface-variant text-xs">
-                                            Profit
-                                        </p>
-
-                                        <p class="font-bold text-green-600">
-                                            ${{ number_format($seg['total_profit'], 0) }}
-                                        </p>
-
-                                    </div>
-
-                                    <div>
-
-                                        <p class="text-on-surface-variant text-xs">
-                                            Customers
-                                        </p>
-
-                                        <p class="font-bold">
-                                            {{ number_format($seg['total_customers'] ?? 0) }}
-                                        </p>
-
-                                    </div>
-
-                                </div>
+                                <p class="font-bold">
+                                    ${{ number_format($seg['total_sales'], 0) }}
+                                </p>
 
                             </div>
 
+                            <div>
+
+                                <p class="text-on-surface-variant text-xs">
+                                    Profit
+                                </p>
+
+                                <p class="font-bold text-green-600">
+                                    ${{ number_format($seg['total_profit'], 0) }}
+                                </p>
+
+                            </div>
+
+                            <div>
+
+                                <p class="text-on-surface-variant text-xs">
+                                    Customers
+                                </p>
+
+                                <p class="font-bold">
+                                    {{ number_format($seg['total_customers'] ?? 0) }}
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                    </div>
                 @endforeach
 
             </div>

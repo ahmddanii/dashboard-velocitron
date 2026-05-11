@@ -3,7 +3,24 @@
 @section('title', 'Transaction History')
 
 @section('content')
-    <div class="p-6" x-data="{ tab: 'dss' }">
+    <div class="p-6" x-data="{ 
+        tab: '{{ request('tab', 'dss') }}',
+        editData: {
+            id: '',
+            title: '',
+            description: '',
+            sales: 0,
+            quantity: 1,
+            discount: 0,
+            shipping_days: 4,
+            category: '',
+            segment: '',
+            region: '',
+            ship_mode: '',
+            updateUrl: ''
+        },
+        cancelUrl: ''
+    }">
         <div class="max-w-[1440px] mx-auto">
 
             {{-- Header --}}
@@ -65,6 +82,7 @@
                                     <th class="text-left px-5 py-3 text-xs font-bold uppercase tracking-wider text-on-surface-variant">Decision</th>
                                     <th class="text-left px-5 py-3 text-xs font-bold uppercase tracking-wider text-on-surface-variant">Approved By</th>
                                     <th class="text-left px-5 py-3 text-xs font-bold uppercase tracking-wider text-on-surface-variant">Date</th>
+                                    <th class="text-center px-5 py-3 text-xs font-bold uppercase tracking-wider text-on-surface-variant">Action</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-outline-variant">
@@ -100,12 +118,48 @@
                                         </td>
                                         <td class="px-5 py-4 text-sm">{{ $trx->approver->name ?? '-' }}</td>
                                         <td class="px-5 py-4 text-sm text-on-surface-variant">
-                                            {{ optional($trx->approved_at)->format('d M Y H:i') }}
+                                            {{ optional($trx->created_at)->format('d M Y H:i') }}
+                                        </td>
+                                        <td class="px-5 py-4 text-center">
+                                            @if($trx->status === 'pending' && $trx->requester_id === auth()->id())
+                                                <div class="flex items-center justify-center gap-2">
+                                                    <button type="button" 
+                                                        @click="
+                                                            editData = {
+                                                                id: '{{ $trx->id }}',
+                                                                title: '{{ addslashes($trx->title) }}',
+                                                                description: '{{ addslashes($trx->description) }}',
+                                                                sales: {{ $trx->sales }},
+                                                                quantity: {{ $trx->quantity }},
+                                                                discount: {{ $trx->discount }},
+                                                                shipping_days: {{ $trx->shipping_days }},
+                                                                category: '{{ $trx->category }}',
+                                                                segment: '{{ $trx->segment }}',
+                                                                region: '{{ $trx->region }}',
+                                                                ship_mode: '{{ $trx->ship_mode }}',
+                                                                updateUrl: '{{ route('requests.update', $trx->id) }}'
+                                                            };
+                                                            $dispatch('open-modal', 'edit-request-modal')
+                                                        "
+                                                        class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 text-xs font-bold hover:bg-blue-100 transition">
+                                                        <span class="material-symbols-outlined text-sm">edit</span>
+                                                        Edit
+                                                    </button>
+                                                    <button type="button" 
+                                                        @click="$dispatch('set-cancel-url', '{{ route('requests.cancel', $trx->id) }}'); $dispatch('open-modal', 'confirm-request-cancellation')"
+                                                        class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-bold hover:bg-red-100 transition">
+                                                        <span class="material-symbols-outlined text-sm">close</span>
+                                                        Cancel
+                                                    </button>
+                                                </div>
+                                            @else
+                                                <span class="text-slate-400 text-xs">-</span>
+                                            @endif
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="7" class="py-12 text-center text-on-surface-variant">
+                                        <td colspan="8" class="py-12 text-center text-on-surface-variant">
                                             <span class="material-symbols-outlined text-4xl block mb-2 opacity-30">rule</span>
                                             Belum ada histori transaksi DSS.
                                         </td>
@@ -252,6 +306,190 @@
                 </x-ui.card>
             </div>
 
+            {{-- Edit Request Modal --}}
+            <x-modal name="edit-request-modal" focusable maxWidth="2xl">
+                <div class="p-6">
+                    <form method="post" :action="editData.updateUrl">
+                        @csrf
+                        @method('put')
+
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+                                <span class="material-symbols-outlined">edit_note</span>
+                            </div>
+                            <div>
+                                <h2 class="text-lg font-bold text-on-surface">Edit {{ $requestMeta['title'] }}</h2>
+                                <p class="text-xs text-on-surface-variant">Perbarui detail pengajuan Anda.</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            {{-- Title & Description --}}
+                            <div class="grid grid-cols-1 gap-4 p-4 rounded-xl bg-surface-container-low border border-outline-variant">
+                                <div>
+                                    <label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Title</label>
+                                    <input type="text" name="title" x-model="editData.title" required
+                                        class="w-full px-3 py-2 bg-white border border-outline-variant rounded-lg text-sm focus:ring-2 focus:ring-secondary/20 transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Description</label>
+                                    <textarea name="description" x-model="editData.description" rows="2"
+                                        class="w-full px-3 py-2 bg-white border border-outline-variant rounded-lg text-sm focus:ring-2 focus:ring-secondary/20 transition-all"></textarea>
+                                </div>
+                            </div>
+
+                            {{-- Financials --}}
+                            <div class="grid grid-cols-2 gap-4 p-4 rounded-xl bg-surface-container-low border border-outline-variant">
+                                <div>
+                                    <label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                                        {{ $requestMeta['fields']['sales']['label'] }}
+                                    </label>
+                                    <input type="number" name="sales" step="0.01" x-model="editData.sales" required
+                                        class="w-full px-3 py-2 bg-white border border-outline-variant rounded-lg text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                                        {{ $requestMeta['fields']['quantity']['label'] }}
+                                    </label>
+                                    <input type="number" name="quantity" x-model="editData.quantity" required
+                                        class="w-full px-3 py-2 bg-white border border-outline-variant rounded-lg text-sm">
+                                </div>
+                                
+                                @if($requestMeta['fields']['discount']['show'])
+                                <div class="col-span-2">
+                                    <label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                                        {{ $requestMeta['fields']['discount']['label'] }}
+                                    </label>
+                                    <select name="discount" x-model="editData.discount" class="w-full px-3 py-2 bg-white border border-outline-variant rounded-lg text-sm">
+                                        @foreach([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8] as $d)
+                                            <option value="{{ $d }}">{{ $d * 100 }}%</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                @else
+                                    <input type="hidden" name="discount" :value="editData.discount">
+                                @endif
+                            </div>
+
+                            {{-- Logistics & Classification --}}
+                            <div class="grid grid-cols-2 gap-4 p-4 rounded-xl bg-surface-container-low border border-outline-variant">
+                                @if($requestMeta['fields']['shipping_days']['show'])
+                                <div>
+                                    <label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                                        {{ $requestMeta['fields']['shipping_days']['label'] }}
+                                    </label>
+                                    <input type="number" name="shipping_days" x-model="editData.shipping_days" required
+                                        class="w-full px-3 py-2 bg-white border border-outline-variant rounded-lg text-sm">
+                                </div>
+                                @else
+                                    <input type="hidden" name="shipping_days" :value="editData.shipping_days">
+                                @endif
+
+                                <div>
+                                    <label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                                        {{ $requestMeta['fields']['category']['label'] }}
+                                    </label>
+                                    <select name="category" x-model="editData.category" class="w-full px-3 py-2 bg-white border border-outline-variant rounded-lg text-sm">
+                                        @foreach($requestMeta['fields']['category']['options'] as $opt)
+                                            <option value="{{ $opt }}">{{ $opt }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                @if($requestMeta['fields']['segment']['show'])
+                                <div>
+                                    <label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                                        {{ $requestMeta['fields']['segment']['label'] }}
+                                    </label>
+                                    <select name="segment" x-model="editData.segment" class="w-full px-3 py-2 bg-white border border-outline-variant rounded-lg text-sm">
+                                        @foreach($requestMeta['fields']['segment']['options'] as $opt)
+                                            <option value="{{ $opt }}">{{ $opt }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                @else
+                                    <input type="hidden" name="segment" :value="editData.segment">
+                                @endif
+
+                                @if($requestMeta['fields']['region']['show'])
+                                <div>
+                                    <label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                                        {{ $requestMeta['fields']['region']['label'] }}
+                                    </label>
+                                    <select name="region" x-model="editData.region" class="w-full px-3 py-2 bg-white border border-outline-variant rounded-lg text-sm">
+                                        @foreach($requestMeta['fields']['region']['options'] as $opt)
+                                            <option value="{{ $opt }}">{{ $opt }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                @endif
+
+                                @if($requestMeta['fields']['ship_mode']['show'])
+                                <div class="col-span-2">
+                                    <label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                                        {{ $requestMeta['fields']['ship_mode']['label'] }}
+                                    </label>
+                                    <select name="ship_mode" x-model="editData.ship_mode" class="w-full px-3 py-2 bg-white border border-outline-variant rounded-lg text-sm">
+                                        @foreach($requestMeta['fields']['ship_mode']['options'] as $opt)
+                                            <option value="{{ $opt }}">{{ $opt }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                @else
+                                    <input type="hidden" name="ship_mode" :value="editData.ship_mode">
+                                @endif
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end gap-3 mt-8">
+                            <button type="button" x-on:click="$dispatch('close')"
+                                class="px-5 py-2.5 rounded-lg border border-outline-variant text-sm font-semibold text-on-surface hover:bg-surface-container transition-all">
+                                Batal
+                            </button>
+
+                            <button type="submit"
+                                class="px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-all shadow-md">
+                                Simpan Perubahan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </x-modal>
+
+            {{-- Cancel Confirmation Modal --}}
+            <x-modal name="confirm-request-cancellation" focusable>
+                <div class="p-6" x-data="{ url: '' }" @set-cancel-url.window="url = $event.detail">
+                    <form method="post" :action="url">
+                        @csrf
+                        @method('delete')
+
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600">
+                                <span class="material-symbols-outlined">warning</span>
+                            </div>
+                            <h2 class="text-lg font-bold text-on-surface">
+                                Batalkan Request?
+                            </h2>
+                        </div>
+
+                        <p class="text-sm text-on-surface-variant mb-6">
+                            Apakah Anda yakin ingin membatalkan request ini? Tindakan ini akan menghapus request dari antrian secara permanen.
+                        </p>
+
+                        <div class="flex justify-end gap-3">
+                            <button type="button" x-on:click="$dispatch('close')"
+                                class="px-5 py-2.5 rounded-lg border border-outline-variant text-sm font-semibold text-on-surface hover:bg-surface-container transition-all">
+                                Tetap Simpan
+                            </button>
+
+                            <button type="submit"
+                                class="px-5 py-2.5 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-all">
+                                Ya, Batalkan Request
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </x-modal>
         </div>
     </div>
 

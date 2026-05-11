@@ -9,7 +9,7 @@ use App\Models\TransactionRequest;
 
 class DashboardController extends Controller
 {
-    private string $api = 'http://localhost:5000/api';
+    private string $api = 'http://127.0.0.1:5000/api';
 
     public function index()
     {
@@ -508,23 +508,30 @@ class DashboardController extends Controller
     // ── Chief Logistics Officer ───────────────────────────────
     private function dashboardLogistics()
     {
-        $summary = Http::timeout(5)->get("{$this->api}/summary")->json() ?? [];
-
-        $region = Http::timeout(5)
-            ->get("{$this->api}/sales-by-region")
-            ->json() ?? [];
-
-        /*
-|--------------------------------------------------------------------------
-| Dashboard Filters
-|--------------------------------------------------------------------------
-*/
-
-        $statusFilter = request('status');
-
-        $periodFilter = request('period');
+        $apiWarning = false;
+        try {
+            $summary = Http::timeout(15)->get("{$this->api}/summary")->json() ?? [];
+            $region  = Http::timeout(15)->get("{$this->api}/sales-by-region")->json() ?? [];
+            $yearly  = Http::timeout(15)->get("{$this->api}/yearly-trend")->json() ?? [];
+        } catch (\Exception $e) {
+            $summary = [];
+            $region  = [];
+            $yearly  = [];
+            // Log error jika perlu atau set flag peringatan
+            $apiWarning = true;
+        }
 
         $query = TransactionRequest::query();
+
+        $statusFilter = request('status');
+        $periodFilter = request('period');
+
+        $dssTrend = (clone $query)
+            ->selectRaw('DATE(created_at) as date, SUM(CASE WHEN status = "approved" THEN 1 ELSE 0 END) as approved, SUM(CASE WHEN status = "rejected" THEN 1 ELSE 0 END) as rejected')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->take(10)
+            ->get();
 
         if ($statusFilter) {
 
@@ -647,13 +654,17 @@ class DashboardController extends Controller
 
         return view('dashboard.index', compact(
             'summary',
-            'region'
+            'region',
+            'yearly',
+            'dssTrend',
+            'apiWarning'
         ) + [
 
             'role' => 'logistics-officer',
+            'apiWarning' => $apiWarning ?? false,
 
             'monthly' => [],
-            'yearly' => [],
+            'yearly' => $yearly,
             'category' => [],
             'segment' => [],
             'products' => [],
@@ -663,12 +674,13 @@ class DashboardController extends Controller
                 'role' => 'logistics-officer',
 
                 'monthly' => [],
-                'yearly' => [],
+                'yearly' => $yearly,
 
                 'category' => [],
                 'region' => $region,
 
                 'segment' => [],
+                'dssTrend' => $dssTrend,
             ],
 
             'logisticsAnalytics' => [
@@ -915,14 +927,14 @@ class DashboardController extends Controller
 |--------------------------------------------------------------------------
 */
 
-        $segment = array_filter(
+        $segment = array_values(array_filter(
             $segment,
             fn($s) =>
             in_array(
                 $s['segment'],
                 ['Corporate', 'Home Office']
             )
-        );
+        ));
 
         /*
 |--------------------------------------------------------------------------
@@ -1105,8 +1117,16 @@ class DashboardController extends Controller
                 'rejected_contracts' =>
                 $rejectedContracts,
 
+                'approval_rate' =>
+                $totalContracts > 0
+                    ? round(($approvedContracts / $totalContracts) * 100, 1)
+                    : 0,
+
                 'avg_confidence' =>
                 $avgContractConfidence,
+
+                'top_segment' =>
+                collect($segment)->sortByDesc('total_sales')->first()['segment'] ?? '-',
 
                 'top_region' =>
                 $topContractRegion?->region
@@ -1201,25 +1221,7 @@ class DashboardController extends Controller
     public function createRequest()
     {
         $role = auth()->user()->roles->first()?->name;
-
-        $requestTypeMap = [
-            'procurement-director' => [
-                'type'        => 'procurement',
-                'title'       => 'Create Procurement Request',
-                'description' => 'Ajukan pengadaan inventory & supplier procurement.',
-            ],
-            'logistics-officer' => [
-                'type'        => 'shipment',
-                'title'       => 'Create Shipment Request',
-                'description' => 'Ajukan distribusi & shipment approval.',
-            ],
-            'key-account-manager' => [
-                'type'        => 'contract',
-                'title'       => 'Create Contract Request',
-                'description' => 'Ajukan kontrak client & discount approval.',
-            ],
-        ];
-
+        $requestTypeMap = $this->getRequestConfig($role);
         $requestMeta = $requestTypeMap[$role] ?? null;
         abort_if(!$requestMeta, 403);
 
@@ -1269,6 +1271,126 @@ class DashboardController extends Controller
             ->with('success', 'Request berhasil diajukan ke Financial Controller.');
     }
 
+    public function editRequest($id)
+    {
+        $requestItem = TransactionRequest::findOrFail($id);
+
+        // Security check
+        abort_if($requestItem->requester_id !== auth()->id(), 403, 'Unauthorized access.');
+        abort_if($requestItem->status !== 'pending', 403, 'Hanya request pending yang bisa diedit.');
+
+        $role = auth()->user()->roles->first()?->name;
+
+        $requestTypeMap = $this->getRequestConfig($role);
+        $requestMeta = $requestTypeMap[$role] ?? null;
+        abort_if(!$requestMeta, 403);
+
+        return view('requests.edit', compact('requestMeta', 'requestItem'));
+    }
+
+    public function updateRequest(Request $request, $id)
+    {
+        $requestItem = TransactionRequest::findOrFail($id);
+
+        // Security check
+        abort_if($requestItem->requester_id !== auth()->id(), 403, 'Unauthorized access.');
+        abort_if($requestItem->status !== 'pending', 403, 'Hanya request pending yang bisa diupdate.');
+
+        $request->validate([
+            'title'         => 'required|max:255',
+            'description'   => 'nullable',
+            'sales'         => 'required|numeric|min:0',
+            'quantity'      => 'required|integer|min:1',
+            'discount'      => 'required|numeric|min:0|max:0.8',
+            'shipping_days' => 'required|integer|min:0|max:7',
+            'category'      => 'required',
+            'segment'       => 'required',
+            'region'        => 'required',
+            'ship_mode'     => 'required',
+        ]);
+
+        $requestItem->update([
+            'title'         => $request->title,
+            'description'   => $request->description,
+            'sales'         => $request->sales,
+            'quantity'      => $request->quantity,
+            'discount'      => $request->discount,
+            'shipping_days' => $request->shipping_days,
+            'category'      => $request->category,
+            'segment'       => $request->segment,
+            'region'        => $request->region,
+            'ship_mode'     => $request->ship_mode,
+        ]);
+
+        return redirect()->route('transactions.history')
+            ->with('status', 'Request berhasil diupdate!');
+    }
+
+    public function cancelRequest($id)
+    {
+        $requestItem = TransactionRequest::findOrFail($id);
+
+        // Security check
+        abort_if($requestItem->requester_id !== auth()->id(), 403, 'Unauthorized access.');
+        abort_if($requestItem->status !== 'pending', 403, 'Hanya request pending yang bisa dibatalkan.');
+
+        $requestItem->delete();
+
+        return redirect()->route('transactions.history')
+            ->with('status', 'Request berhasil dibatalkan dan dihapus.');
+    }
+
+    private function getRequestConfig(string $role): array
+    {
+        return [
+            'procurement-director' => [
+                'type'        => 'procurement',
+                'title'       => 'Procurement Request',
+                'description' => 'Edit pengadaan inventory & supplier procurement.',
+                'fields'      => [
+                    'sales'         => ['show' => true,  'label' => 'Estimated Cost ($)'],
+                    'quantity'      => ['show' => true,  'label' => 'Order Quantity'],
+                    'discount'      => ['show' => false, 'default' => 0.0],
+                    'shipping_days' => ['show' => false, 'default' => 4],
+                    'category'      => ['show' => true,  'label' => 'Product Category', 'options' => ['Furniture', 'Office Supplies', 'Technology']],
+                    'segment'       => ['show' => false, 'default' => 'Consumer'],
+                    'region'        => ['show' => true,  'label' => 'Supplier Region', 'options' => ['East', 'West', 'Central', 'South']],
+                    'ship_mode'     => ['show' => false, 'default' => 'Standard Class'],
+                ],
+            ],
+            'logistics-officer' => [
+                'type'        => 'shipment',
+                'title'       => 'Shipment Request',
+                'description' => 'Edit distribusi & shipment approval.',
+                'fields'      => [
+                    'sales'         => ['show' => true,  'label' => 'Shipment Value ($)'],
+                    'quantity'      => ['show' => true,  'label' => 'Package Quantity'],
+                    'discount'      => ['show' => false, 'default' => 0.0],
+                    'shipping_days' => ['show' => true,  'label' => 'Estimasi Hari Kirim'],
+                    'category'      => ['show' => true,  'label' => 'Product Category', 'options' => ['Furniture', 'Office Supplies', 'Technology']],
+                    'segment'       => ['show' => true,  'label' => 'Customer Segment', 'options' => ['Consumer', 'Corporate', 'Home Office']],
+                    'region'        => ['show' => true,  'label' => 'Destination Region', 'options' => ['East', 'West', 'Central', 'South']],
+                    'ship_mode'     => ['show' => true,  'label' => 'Ship Mode', 'options' => ['First Class', 'Second Class', 'Standard Class', 'Same Day']],
+                ],
+            ],
+            'key-account-manager' => [
+                'type'        => 'contract',
+                'title'       => 'Contract Request',
+                'description' => 'Edit kontrak client & discount approval.',
+                'fields'      => [
+                    'sales'         => ['show' => true,  'label' => 'Nilai Kontrak ($)'],
+                    'quantity'      => ['show' => true,  'label' => 'Jumlah Item'],
+                    'discount'      => ['show' => true,  'label' => 'Diskon Klien'],
+                    'shipping_days' => ['show' => false, 'default' => 4],
+                    'category'      => ['show' => true,  'label' => 'Product Category', 'options' => ['Furniture', 'Office Supplies', 'Technology']],
+                    'segment'       => ['show' => true,  'label' => 'Client Segment', 'options' => ['Corporate', 'Home Office']],
+                    'region'        => ['show' => true,  'label' => 'Client Region', 'options' => ['East', 'West', 'Central', 'South']],
+                    'ship_mode'     => ['show' => false, 'default' => 'Standard Class'],
+                ],
+            ],
+        ];
+    }
+
     public function pendingRequests()
     {
         $requests = TransactionRequest::latest()
@@ -1282,6 +1404,7 @@ class DashboardController extends Controller
     public function reviewRequest($id)
     {
         $requestData = TransactionRequest::findOrFail($id);
+        $result = null;
 
         try {
             $response = Http::timeout(10)->post("{$this->api}/predict-profit", [
@@ -1296,13 +1419,20 @@ class DashboardController extends Controller
             ]);
 
             $result = $response->json();
-
-            $requestData->update([
-                'prediction' => $result['label_id'] ?? null,
-                'confidence' => $result['confidence'] ?? null,
-            ]);
         } catch (\Exception $e) {
-            $result = null;
+            \Log::error('DSS Review Error: ' . $e->getMessage());
+        }
+
+        // ✅ Update database terpisah dari fetch — pakai prob_profitable (angka) bukan confidence (string)
+        if ($result) {
+            try {
+                $requestData->update([
+                    'prediction' => $result['label_id'] ?? null,
+                    'confidence' => $result['prob_profitable'] ?? null, // ← angka desimal, bukan string
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('DB Update Error: ' . $e->getMessage());
+            }
         }
 
         return view('requests.review', compact('requestData', 'result'));
@@ -1378,8 +1508,9 @@ class DashboardController extends Controller
     {
         $role = auth()->user()->roles->first()?->name;
 
+        // ── DSS Requests ─────────────────────────────────────────
         $query = TransactionRequest::latest()
-            ->whereIn('status', ['approved', 'rejected'])
+            ->whereIn('status', ['pending', 'approved', 'rejected'])
             ->with(['requester', 'approver']);
 
         if ($role === 'procurement-director') {
@@ -1389,11 +1520,46 @@ class DashboardController extends Controller
         } elseif ($role === 'key-account-manager') {
             $query->where('request_type', 'contract');
         }
-        // financial-controller sees all
 
         $transactions = $query->paginate(15);
 
-        return view('transactions.history', compact('transactions'));
+        // Ambil config field untuk modal edit di view
+        $requestTypeMap = $this->getRequestConfig($role);
+        $requestMeta = $requestTypeMap[$role] ?? null;
+
+        // ── Historical Orders dari Flask API ──────────────────────
+        $historicalPage = (int) request('historical_page', 1);
+        $category       = request('category', '');
+        $region         = request('region', '');
+        $segment        = request('segment', '');
+
+        try {
+            $response = Http::timeout(10)->get("{$this->api}/orders", [
+                'page'     => $historicalPage,
+                'per_page' => 15,
+                'category' => $category,
+                'region'   => $region,
+                'segment'  => $segment,
+            ])->json();
+
+            $historicalOrders   = $response['data']      ?? [];
+            $historicalTotal    = $response['total']     ?? 0;
+            $historicalLastPage = $response['last_page'] ?? 1;
+        } catch (\Exception $e) {
+            $historicalOrders   = [];
+            $historicalTotal    = 0;
+            $historicalLastPage = 1;
+        }
+
+        return view('transactions.history', compact(
+            'transactions',
+            'historicalOrders',
+            'historicalTotal',
+            'historicalLastPage',
+            'historicalPage',
+            'role',
+            'requestMeta'
+        ));
     }
 
     public function exportTransactions()
@@ -1488,15 +1654,21 @@ class DashboardController extends Controller
         };
 
         return $query->take(5)->get()->map(function ($item) {
-            $statusLabel = $item->status === 'approved' ? 'disetujui' : 'ditolak';
+            $statusLabel = match ($item->status) {
+                'approved' => 'disetujui',
+                'rejected' => 'ditolak',
+                default    => 'menunggu review',
+            };
             $prediction  = $item->prediction ? " Prediksi DSS: {$item->prediction}." : '';
             $confidence  = $item->confidence ? " Confidence: {$item->confidence}%." : '';
+
+            $verb = $item->status === 'pending' ? 'sedang' : 'telah';
 
             return [
                 'title'      => $item->title,
                 'status'     => $item->status,
                 'created_at' => $item->created_at,
-                'message'    => ucfirst($item->request_type) . " request via {$item->ship_mode} telah {$statusLabel}.{$prediction}{$confidence}",
+                'message'    => ucfirst($item->request_type) . " request via {$item->ship_mode} {$verb} {$statusLabel}.{$prediction}{$confidence}",
             ];
         });
     }

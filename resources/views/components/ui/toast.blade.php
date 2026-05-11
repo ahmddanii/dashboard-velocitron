@@ -1,6 +1,6 @@
 @php
     $messages = [
-        'success' => session('success'),
+        'success' => session('success') ?? session('status'),
         'error' => session('error'),
         'warning' => session('warning'),
         'info' => session('info'),

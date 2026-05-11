@@ -12,13 +12,13 @@ export function initYearlyChart(yearlyData) {
         type: "bar",
 
         data: {
-            labels: yearlyData.map((item) => item.year),
+            labels: yearlyData.map((item) => item.year || 'Unknown'),
 
             datasets: [
                 {
                     label: "Total Sales",
 
-                    data: yearlyData.map((item) => item.total_sales),
+                    data: yearlyData.map((item) => item.total_sales || 0),
 
                     backgroundColor: [
                         COLORS.blueLt,

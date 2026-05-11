@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Create Request')
+@section('title', 'Edit Request')
 
 @section('content')
 
@@ -12,7 +12,7 @@
 
             <div class="flex items-center gap-4 mb-8">
 
-                <a href="{{ route('dashboard') }}" class="p-2 rounded-lg border border-outline-variant">
+                <a href="{{ route('transactions.history') }}" class="p-2 rounded-lg border border-outline-variant">
 
                     <span class="material-symbols-outlined">
                         arrow_back
@@ -23,7 +23,7 @@
                 <div>
 
                     <h2 class="font-display-lg text-display-lg">
-                        {{ $requestMeta['title'] }}
+                        Edit {{ $requestMeta['title'] }}
                     </h2>
 
                     <p class="text-on-surface-variant mt-1">
@@ -45,19 +45,13 @@
                         @else bg-cyan-50 text-cyan-600
                         @endif">
                         <span class="material-symbols-outlined text-base">
-                            @if($requestMeta['type'] === 'procurement') inventory_2
-                            @elseif($requestMeta['type'] === 'shipment') local_shipping
-                            @else handshake
-                            @endif
+                            edit
                         </span>
                     </div>
                     <div>
-                        <h3 class="dashboard-title">Request Form</h3>
+                        <h3 class="dashboard-title">Update Form</h3>
                         <p class="dashboard-subtitle">
-                            @if($requestMeta['type'] === 'procurement') Lengkapi detail pengadaan untuk diproses DSS.
-                            @elseif($requestMeta['type'] === 'shipment') Lengkapi detail pengiriman untuk evaluasi DSS.
-                            @else Lengkapi detail kontrak klien untuk approval DSS.
-                            @endif
+                            Perbarui detail request kamu sebelum diproses.
                         </p>
                     </div>
                 </div>
@@ -87,9 +81,10 @@
 
                 @endif
 
-                <form method="POST" action="{{ route('requests.store') }}" class="dashboard-card-body space-y-5">
+                <form method="POST" action="{{ route('requests.update', $requestItem->id) }}" class="dashboard-card-body space-y-5">
 
                     @csrf
+                    @method('PUT')
 
                     {{-- ═══════════════════════════════════════════
                         SECTION 1: Request Info
@@ -103,13 +98,9 @@
                         {{-- Title --}}
                         <div class="mb-4">
                             <label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
-                                @if($requestMeta['type'] === 'procurement') Procurement Title
-                                @elseif($requestMeta['type'] === 'shipment') Shipment Title
-                                @else Contract Title
-                                @endif
+                                Title
                             </label>
-                            <input type="text" name="title" required value="{{ old('title') }}"
-                                placeholder="@if($requestMeta['type'] === 'procurement')Contoh: Pengadaan Laptop Q3 2026 @elseif($requestMeta['type'] === 'shipment')Contoh: Shipment Furniture ke East Region @else Contoh: Kontrak Corporate PT ABC @endif"
+                            <input type="text" name="title" required value="{{ old('title', $requestItem->title) }}"
                                 class="w-full px-3 py-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-sm
                                        focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all">
                         </div>
@@ -120,9 +111,8 @@
                                 Description
                             </label>
                             <textarea name="description" rows="3"
-                                placeholder="@if($requestMeta['type'] === 'procurement')Detail pengadaan barang, supplier, kebutuhan... @elseif($requestMeta['type'] === 'shipment')Detail pengiriman, alamat tujuan, notes... @else Detail kontrak klien, terms, notes... @endif"
                                 class="w-full px-3 py-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-sm
-                                       focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all">{{ old('description') }}</textarea>
+                                       focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all">{{ old('description', $requestItem->description) }}</textarea>
                         </div>
                     </div>
 
@@ -142,7 +132,7 @@
                                 <label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
                                     {{ $fields['sales']['label'] }}
                                 </label>
-                                <input type="number" name="sales" step="0.01" min="0" value="{{ old('sales', 500) }}" required
+                                <input type="number" name="sales" step="0.01" min="0" value="{{ old('sales', $requestItem->sales) }}" required
                                     class="w-full px-3 py-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-sm
                                            focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all">
                             </div>
@@ -152,7 +142,7 @@
                                 <label class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
                                     {{ $fields['quantity']['label'] }}
                                 </label>
-                                <input type="number" name="quantity" min="1" max="20" value="{{ old('quantity', 3) }}" required
+                                <input type="number" name="quantity" min="1" max="20" value="{{ old('quantity', $requestItem->quantity) }}" required
                                     class="w-full px-3 py-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-sm
                                            focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all">
                             </div>
@@ -171,14 +161,14 @@
                                         class="w-full px-3 py-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-sm
                                                focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all">
                                         @foreach([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8] as $d)
-                                            <option value="{{ $d }}" {{ old('discount', 0.2) == $d ? 'selected' : '' }}>
+                                            <option value="{{ $d }}" {{ old('discount', $requestItem->discount) == $d ? 'selected' : '' }}>
                                                 {{ $d * 100 }}%
                                             </option>
                                         @endforeach
                                     </select>
                                 </div>
                             @else
-                                <input type="hidden" name="discount" value="{{ $fields['discount']['default'] }}">
+                                <input type="hidden" name="discount" value="{{ $requestItem->discount }}">
                             @endif
 
                             {{-- Shipping Days --}}
@@ -188,12 +178,12 @@
                                         {{ $fields['shipping_days']['label'] }}
                                     </label>
                                     <input type="number" name="shipping_days" min="0" max="7"
-                                        value="{{ old('shipping_days', 4) }}" required
+                                        value="{{ old('shipping_days', $requestItem->shipping_days) }}" required
                                         class="w-full px-3 py-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-sm
                                                focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all">
                                 </div>
                             @else
-                                <input type="hidden" name="shipping_days" value="{{ $fields['shipping_days']['default'] }}">
+                                <input type="hidden" name="shipping_days" value="{{ $requestItem->shipping_days }}">
                             @endif
 
                         </div>
@@ -218,7 +208,7 @@
                                     class="w-full px-3 py-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-sm
                                            focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all">
                                     @foreach($fields['category']['options'] as $cat)
-                                        <option value="{{ $cat }}" {{ old('category') == $cat ? 'selected' : '' }}>
+                                        <option value="{{ $cat }}" {{ old('category', $requestItem->category) == $cat ? 'selected' : '' }}>
                                             {{ $cat }}
                                         </option>
                                     @endforeach
@@ -238,14 +228,14 @@
                                         class="w-full px-3 py-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-sm
                                                focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all">
                                         @foreach($fields['segment']['options'] as $seg)
-                                            <option value="{{ $seg }}" {{ old('segment') == $seg ? 'selected' : '' }}>
+                                            <option value="{{ $seg }}" {{ old('segment', $requestItem->segment) == $seg ? 'selected' : '' }}>
                                                 {{ $seg }}
                                             </option>
                                         @endforeach
                                     </select>
                                 </div>
                             @else
-                                <input type="hidden" name="segment" value="{{ $fields['segment']['default'] }}">
+                                <input type="hidden" name="segment" value="{{ $requestItem->segment }}">
                             @endif
 
                             {{-- Region --}}
@@ -258,7 +248,7 @@
                                         class="w-full px-3 py-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-sm
                                                focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all">
                                         @foreach($fields['region']['options'] as $reg)
-                                            <option value="{{ $reg }}" {{ old('region') == $reg ? 'selected' : '' }}>
+                                            <option value="{{ $reg }}" {{ old('region', $requestItem->region) == $reg ? 'selected' : '' }}>
                                                 {{ $reg }}
                                             </option>
                                         @endforeach
@@ -278,32 +268,38 @@
                                     class="w-full px-3 py-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-sm
                                            focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all">
                                     @foreach($fields['ship_mode']['options'] as $mode)
-                                        <option value="{{ $mode }}" {{ old('ship_mode', 'Standard Class') == $mode ? 'selected' : '' }}>
+                                        <option value="{{ $mode }}" {{ old('ship_mode', $requestItem->ship_mode) == $mode ? 'selected' : '' }}>
                                             {{ $mode }}
                                         </option>
                                     @endforeach
                                 </select>
                             </div>
                         @else
-                            <input type="hidden" name="ship_mode" value="{{ $fields['ship_mode']['default'] }}">
+                            <input type="hidden" name="ship_mode" value="{{ $requestItem->ship_mode }}">
                         @endif
                     </div>
 
                     {{-- Submit --}}
-                    <button type="submit"
-                        class="w-full py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2
-                            @if($requestMeta['type'] === 'procurement') bg-blue-600 hover:bg-blue-700
-                            @elseif($requestMeta['type'] === 'shipment') bg-orange-500 hover:bg-orange-600
-                            @else bg-cyan-600 hover:bg-cyan-700
-                            @endif text-white">
+                    <div class="flex gap-3">
+                        <a href="{{ route('transactions.history') }}"
+                            class="flex-1 py-3 rounded-lg font-semibold text-center border border-outline-variant text-on-surface hover:bg-surface-container-low transition-all">
+                            Batal
+                        </a>
+                        <button type="submit"
+                            class="flex-[2] py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2
+                                @if($requestMeta['type'] === 'procurement') bg-blue-600 hover:bg-blue-700
+                                @elseif($requestMeta['type'] === 'shipment') bg-orange-500 hover:bg-orange-600
+                                @else bg-cyan-600 hover:bg-cyan-700
+                                @endif text-white">
 
-                        <span class="material-symbols-outlined text-sm">
-                            send
-                        </span>
+                            <span class="material-symbols-outlined text-sm">
+                                save
+                            </span>
 
-                        Submit {{ ucfirst($requestMeta['type']) }} Request
+                            Simpan Perubahan
 
-                    </button>
+                        </button>
+                    </div>
 
                 </form>
 

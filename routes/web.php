@@ -37,6 +37,21 @@ Route::middleware(['auth'])->group(function () {
     )->name('requests.store');
 
     Route::get(
+        '/requests/{id}/edit',
+        [DashboardController::class, 'editRequest']
+    )->name('requests.edit');
+
+    Route::put(
+        '/requests/{id}/update',
+        [DashboardController::class, 'updateRequest']
+    )->name('requests.update');
+
+    Route::delete(
+        '/requests/{id}/cancel',
+        [DashboardController::class, 'cancelRequest']
+    )->name('requests.cancel');
+
+    Route::get(
         '/requests/pending',
         [DashboardController::class, 'pendingRequests']
     )->name('requests.pending');
