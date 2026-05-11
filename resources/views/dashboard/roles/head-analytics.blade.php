@@ -1,3 +1,9 @@
+@include('dashboard.partials.dss-analytics')
+@include('dashboard.partials.dss-trend-chart')
+@include('dashboard.partials.executive-insights')
+
+
+
 <div class="dashboard-grid">
 
     <x-ui.card class="col-span-12 lg:col-span-8 overflow-hidden">

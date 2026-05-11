@@ -18,6 +18,10 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:head-analytics,financial-controller'])->group(function () {
         Route::get('/dashboard/dss',      [DashboardController::class, 'dss'])->name('dashboard.dss');
         Route::post('/dashboard/predict', [DashboardController::class, 'predict'])->name('dashboard.predict');
+        
+        // Export Preview
+        Route::get('/dashboard/export/preview', [DashboardController::class, 'previewExport'])->name('export.preview');
+        Route::get('/dashboard/export/analytics/preview', [DashboardController::class, 'previewAnalyticsExport'])->name('analytics.export.preview');
     });
 
     // Profile
@@ -99,7 +103,6 @@ Route::middleware(['auth'])->group(function () {
     });
     Route::middleware(['role:head-analytics'])->group(function () {
         Route::get('/users',          [UserController::class, 'index'])->name('users.index');
-        Route::get('/users/create',   [UserController::class, 'create'])->name('users.create');
         Route::post('/users',         [UserController::class, 'store'])->name('users.store');
         Route::delete('/users/{id}',  [UserController::class, 'destroy'])->name('users.destroy');
     });

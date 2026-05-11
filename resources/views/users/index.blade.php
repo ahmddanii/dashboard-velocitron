@@ -4,7 +4,7 @@
     <div class="p-6">
 
         {{-- Header --}}
-        <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center justify-between mb-6" x-data="{ showAddModal: false }">
             <div>
                 <h1 class="text-2xl font-bold text-on-surface" style="font-family: 'Syne', sans-serif">
                     User Management
@@ -13,11 +13,104 @@
                     Kelola akses dan role pengguna VELOCITRON.
                 </p>
             </div>
-            <a href="{{ route('users.create') }}"
-                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-secondary text-white text-sm font-semibold hover:opacity-90 transition">
+            <button @click="showAddModal = true"
+                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-secondary text-white text-sm font-semibold hover:opacity-90 transition shadow-lg shadow-blue-900/20">
                 <span class="material-symbols-outlined text-base">person_add</span>
                 Add User
-            </a>
+            </button>
+
+            {{-- Add User Modal --}}
+            <div x-show="showAddModal" 
+                class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0 scale-95"
+                x-transition:enter-end="opacity-100 scale-100"
+                x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="opacity-100 scale-100"
+                x-transition:leave-end="opacity-0 scale-95"
+                x-cloak>
+                
+                <div class="bg-surface rounded-[32px] shadow-2xl max-w-lg w-full overflow-hidden border border-outline-variant" @click.away="showAddModal = false">
+                    {{-- Modal Header --}}
+                    <div class="px-8 py-6 border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-2xl bg-blue-100 flex items-center justify-center text-blue-600 shadow-inner">
+                                <span class="material-symbols-outlined text-2xl">person_add</span>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-on-surface">Add New User</h3>
+                                <p class="text-xs text-on-surface-variant">Buat akun akses sistem baru.</p>
+                            </div>
+                        </div>
+                        <button @click="showAddModal = false" class="p-2 hover:bg-surface-container rounded-full transition">
+                            <span class="material-symbols-outlined text-on-surface-variant">close</span>
+                        </button>
+                    </div>
+
+                    {{-- Modal Body --}}
+                    <form method="POST" action="{{ route('users.store') }}" class="p-8 space-y-4">
+                        @csrf
+                        
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">Full Name</label>
+                            <input type="text" name="name" required placeholder="e.g. Ahmad Dani"
+                                class="w-full px-4 py-2.5 rounded-xl border border-outline-variant bg-surface-container-low text-sm text-on-surface focus:ring-2 focus:ring-secondary/30 focus:border-secondary focus:outline-none transition">
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">Email Address</label>
+                            <input type="email" name="email" required placeholder="e.g. dani@velocitron.com"
+                                class="w-full px-4 py-2.5 rounded-xl border border-outline-variant bg-surface-container-low text-sm text-on-surface focus:ring-2 focus:ring-secondary/30 focus:border-secondary focus:outline-none transition">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="col-span-2">
+                                <label class="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">Role Access</label>
+                                <select name="role" required
+                                    class="w-full px-4 py-2.5 rounded-xl border border-outline-variant bg-surface-container-low text-sm text-on-surface focus:ring-2 focus:ring-secondary/30 focus:border-secondary focus:outline-none transition">
+                                    <option value="" disabled selected>Pilih role...</option>
+                                    @foreach($roles as $role)
+                                        <option value="{{ $role->name }}">
+                                            {{ ucwords(str_replace('-', ' ', $role->name)) }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div x-data="{ show: false }">
+                                <label class="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">Password</label>
+                                <div class="relative">
+                                    <input :type="show ? 'text' : 'password'" name="password" required placeholder="Min. 8 char"
+                                        class="w-full px-4 py-2.5 rounded-xl border border-outline-variant bg-surface-container-low text-sm text-on-surface focus:ring-2 focus:ring-secondary/30 focus:border-secondary focus:outline-none transition">
+                                    <button type="button" @click="show = !show" class="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-secondary transition-colors">
+                                        <span class="material-symbols-outlined text-base" x-text="show ? 'visibility_off' : 'visibility'"></span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div x-data="{ show: false }">
+                                <label class="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">Confirm</label>
+                                <div class="relative">
+                                    <input :type="show ? 'text' : 'password'" name="password_confirmation" required placeholder="Ulangi"
+                                        class="w-full px-4 py-2.5 rounded-xl border border-outline-variant bg-surface-container-low text-sm text-on-surface focus:ring-2 focus:ring-secondary/30 focus:border-secondary focus:outline-none transition">
+                                    <button type="button" @click="show = !show" class="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-secondary transition-colors">
+                                        <span class="material-symbols-outlined text-base" x-text="show ? 'visibility_off' : 'visibility'"></span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 flex gap-3">
+                            <button type="button" @click="showAddModal = false"
+                                class="flex-1 px-6 py-3 rounded-2xl border border-outline-variant text-sm font-bold text-on-surface-variant hover:bg-surface-container transition">
+                                Batal
+                            </button>
+                            <button type="submit"
+                                class="flex-1 px-6 py-3 rounded-2xl bg-secondary text-white text-sm font-bold hover:opacity-90 transition shadow-lg shadow-blue-900/20">
+                                Create User
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
 
         {{-- Table --}}

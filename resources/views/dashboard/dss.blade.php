@@ -267,11 +267,23 @@
                                 <span class="material-symbols-outlined" style="font-size:100px">model_training</span>
                             </div>
                             <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Tentang Model DSS</p>
-                            <div class="space-y-2 text-sm text-slate-300 relative z-10">
-                                <p>🤖 Algoritma: <span class="text-white font-semibold">Random Forest</span></p>
-                                <p>📊 Dataset: <span class="text-white font-semibold">9.994 transaksi</span></p>
-                                <p>🎯 Target: <span class="text-white font-semibold">is_profitable</span></p>
-                                <p>⚙️ Fitur: <span class="text-white font-semibold">8 variabel</span></p>
+                            <div class="space-y-3 text-sm text-slate-300 relative z-10">
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-sm text-blue-400">smart_toy</span>
+                                    <span>Algoritma: <span class="text-white font-semibold">Random Forest</span></span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-sm text-green-400">dataset</span>
+                                    <span>Dataset: <span class="text-white font-semibold">9.994 transaksi</span></span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-sm text-red-400">track_changes</span>
+                                    <span>Target: <span class="text-white font-semibold">is_profitable</span></span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-sm text-amber-400">manufacturing</span>
+                                    <span>Fitur: <span class="text-white font-semibold">8 variabel</span></span>
+                                </div>
                             </div>
                         </div>
                     @endif

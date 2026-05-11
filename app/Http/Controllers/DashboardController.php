@@ -52,40 +52,33 @@ class DashboardController extends Controller
 */
 
         $statusFilter = request('status');
-
         $periodFilter = request('period');
-
         $query = TransactionRequest::query();
 
         if ($statusFilter) {
-
-            $query->where(
-                'status',
-                $statusFilter
-            );
+            $query->where('status', $statusFilter);
         }
 
-        if ($periodFilter === '7days') {
-
-            $query->where(
-                'created_at',
-                '>=',
-                now()->subDays(7)
-            );
-        } elseif ($periodFilter === '30days') {
-
-            $query->where(
-                'created_at',
-                '>=',
-                now()->subDays(30)
-            );
-        } elseif ($periodFilter === 'year') {
-
-            $query->whereYear(
-                'created_at',
-                now()->year
-            );
+        if ($periodFilter) {
+            if ($periodFilter === '7days') {
+                $query->where('created_at', '>=', now()->subDays(7));
+            } elseif ($periodFilter === '30days') {
+                $query->where('created_at', '>=', now()->subDays(30));
+            } elseif ($periodFilter === 'year') {
+                $query->whereYear('created_at', now()->year);
+            } else {
+                $query->where('created_at', '>=', now()->subDays((int)$periodFilter));
+            }
         }
+
+        $totalPredictions = TransactionRequest::count();
+        $profitablePredictions = TransactionRequest::where('prediction', 1)->count();
+        $riskyPredictions = TransactionRequest::where('prediction', 0)->count();
+        $avgConfidence = round(TransactionRequest::avg('confidence') ?? 0, 1);
+
+        $approvedCount = TransactionRequest::where('status', 'approved')->count();
+        $predictionAccuracy = $totalPredictions > 0 ? round(($approvedCount / $totalPredictions) * 100, 1) : 0;
+
 
         /*
 |--------------------------------------------------------------------------
@@ -154,8 +147,8 @@ class DashboardController extends Controller
 
             ->selectRaw('
         DATE(created_at) as date,
-        SUM(CASE WHEN prediction = "Profitable" THEN 1 ELSE 0 END) as profitable,
-        SUM(CASE WHEN prediction = "Loss" THEN 1 ELSE 0 END) as risky
+        SUM(CASE WHEN prediction = "Profitable" OR prediction = "1" THEN 1 ELSE 0 END) as approved,
+        SUM(CASE WHEN prediction = "Loss" OR prediction = "0" THEN 1 ELSE 0 END) as rejected
     ')
 
             ->groupBy('date')
@@ -165,6 +158,23 @@ class DashboardController extends Controller
             ->take(10)
 
             ->get();
+
+        $totalTransactions = TransactionRequest::count();
+        $approvedCount = TransactionRequest::where('status', 'approved')->count();
+        $rejectedCount = TransactionRequest::where('status', 'rejected')->count();
+        $approvalRate = $totalTransactions > 0 ? round(($approvedCount / $totalTransactions) * 100, 1) : 0;
+        $rejectionRate = $totalTransactions > 0 ? round(($rejectedCount / $totalTransactions) * 100, 1) : 0;
+        
+        // Risky metrics ignore status filter but respect period filter
+        $riskyQuery = TransactionRequest::query();
+        if ($periodFilter) {
+            if ($periodFilter === '7days') $riskyQuery->where('created_at', '>=', now()->subDays(7));
+            elseif ($periodFilter === '30days') $riskyQuery->where('created_at', '>=', now()->subDays(30));
+            elseif ($periodFilter === 'year') $riskyQuery->whereYear('created_at', now()->year);
+        }
+
+        $riskyCategory = (clone $riskyQuery)->where('status', 'rejected')->selectRaw('category, COUNT(*) as total')->groupBy('category')->orderByDesc('total')->first();
+        $riskyShipMode = (clone $riskyQuery)->where('status', 'rejected')->selectRaw('ship_mode, COUNT(*) as total')->groupBy('ship_mode')->orderByDesc('total')->first();
 
         return view('dashboard.index', [
 
@@ -205,305 +215,102 @@ class DashboardController extends Controller
                 "Average confidence DSS berada di angka {$avgConfidence}%.",
             ],
 
+            'dssAnalytics' => [
+                'total_predictions' => $totalTransactions,
+                'profitable_predictions' => $profitablePredictions,
+                'risky_predictions' => $riskyPredictions,
+                'avg_confidence' => $avgConfidence,
+                'approval_rate' => $approvalRate,
+                'rejection_rate' => $rejectionRate,
+                'risky_category' => $riskyCategory?->category ?? '-',
+                'risky_ship_mode' => $riskyShipMode?->ship_mode ?? '-',
+            ],
             'intelligenceFeed' =>
             $this->getIntelligenceFeed(
                 'head-analytics'
             ),
-
         ]);
     }
 
     // ── Financial Controller ──────────────────────────────────
     private function dashboardFinance()
     {
-        $summary  = Http::timeout(5)
-            ->get("{$this->api}/summary")
-            ->json() ?? [];
-
-        $region   = Http::timeout(5)
-            ->get("{$this->api}/sales-by-region")
-            ->json() ?? [];
-
-        $category = Http::timeout(5)
-            ->get("{$this->api}/profit-by-category")
-            ->json() ?? [];
-
-        $yearly   = Http::timeout(5)
-            ->get("{$this->api}/yearly-trend")
-            ->json() ?? [];
-
-        /*
-|--------------------------------------------------------------------------
-| Dashboard Filters
-|--------------------------------------------------------------------------
-*/
+        $summary  = Http::timeout(5)->get("{$this->api}/summary")->json() ?? [];
+        $region   = Http::timeout(5)->get("{$this->api}/sales-by-region")->json() ?? [];
+        $category = Http::timeout(5)->get("{$this->api}/profit-by-category")->json() ?? [];
+        $yearly   = Http::timeout(5)->get("{$this->api}/yearly-trend")->json() ?? [];
 
         $statusFilter = request('status');
-
         $periodFilter = request('period');
-
-        /*
-|--------------------------------------------------------------------------
-| Base Query
-|--------------------------------------------------------------------------
-*/
-
         $query = TransactionRequest::query();
 
-        /*
-|--------------------------------------------------------------------------
-| Status Filter
-|--------------------------------------------------------------------------
-*/
-
         if ($statusFilter) {
-
-            $query->where(
-                'status',
-                $statusFilter
-            );
+            $query->where('status', $statusFilter);
         }
 
-        /*
-|--------------------------------------------------------------------------
-| Period Filter
-|--------------------------------------------------------------------------
-*/
-
-        if ($periodFilter === '7days') {
-
-            $query->where(
-                'created_at',
-                '>=',
-                now()->subDays(7)
-            );
-        } elseif ($periodFilter === '30days') {
-
-            $query->where(
-                'created_at',
-                '>=',
-                now()->subDays(30)
-            );
-        } elseif ($periodFilter === 'year') {
-
-            $query->whereYear(
-                'created_at',
-                now()->year
-            );
+        if ($periodFilter) {
+            if ($periodFilter === '7days') {
+                $query->where('created_at', '>=', now()->subDays(7));
+            } elseif ($periodFilter === '30days') {
+                $query->where('created_at', '>=', now()->subDays(30));
+            } elseif ($periodFilter === 'year') {
+                $query->whereYear('created_at', now()->year);
+            }
         }
 
-        /*
-|--------------------------------------------------------------------------
-| DSS Analytics
-|--------------------------------------------------------------------------
-*/
+        $totalTransactions = TransactionRequest::count();
+        $approvedCount = TransactionRequest::where('status', 'approved')->count();
+        $rejectedCount = TransactionRequest::where('status', 'rejected')->count();
+        $approvalRate = $totalTransactions > 0 ? round(($approvedCount / $totalTransactions) * 100, 1) : 0;
+        $rejectionRate = $totalTransactions > 0 ? round(($rejectedCount / $totalTransactions) * 100, 1) : 0;
+        $avgConfidence = round(TransactionRequest::whereNotNull('confidence')->avg('confidence') ?? 0, 1);
 
-        $totalTransactions =
-            (clone $query)->count();
+        // Risky metrics ignore status filter but respect period filter
+        $riskyQuery = TransactionRequest::query();
+        if ($periodFilter) {
+            if ($periodFilter === '7days') $riskyQuery->where('created_at', '>=', now()->subDays(7));
+            elseif ($periodFilter === '30days') $riskyQuery->where('created_at', '>=', now()->subDays(30));
+            elseif ($periodFilter === 'year') $riskyQuery->whereYear('created_at', now()->year);
+        }
 
-        $approvedCount =
+        $riskyCategory = (clone $riskyQuery)->where('status', 'rejected')->selectRaw('category, COUNT(*) as total')->groupBy('category')->orderByDesc('total')->first();
+        $riskyShipMode = (clone $riskyQuery)->where('status', 'rejected')->selectRaw('ship_mode, COUNT(*) as total')->groupBy('ship_mode')->orderByDesc('total')->first();
 
-            (clone $query)
+        $dssTrend = (clone $query)->selectRaw('DATE(created_at) as date, SUM(CASE WHEN status = "approved" THEN 1 ELSE 0 END) as approved, SUM(CASE WHEN status = "rejected" THEN 1 ELSE 0 END) as rejected')->groupBy('date')->orderBy('date')->take(10)->get();
 
-            ->where(
-                'status',
-                'approved'
-            )
-
-            ->count();
-
-        $rejectedCount =
-
-            (clone $query)
-
-            ->where(
-                'status',
-                'rejected'
-            )
-
-            ->count();
-
-        /*
-|--------------------------------------------------------------------------
-| Rates
-|--------------------------------------------------------------------------
-*/
-
-        $approvalRate =
-
-            $totalTransactions > 0
-
-            ? round(
-                ($approvedCount / $totalTransactions) * 100,
-                1
-            )
-
-            : 0;
-
-        $rejectionRate =
-
-            $totalTransactions > 0
-
-            ? round(
-                ($rejectedCount / $totalTransactions) * 100,
-                1
-            )
-
-            : 0;
-
-        /*
-|--------------------------------------------------------------------------
-| Average Confidence
-|--------------------------------------------------------------------------
-*/
-
-        $avgConfidence = round(
-
-            (clone $query)
-
-                ->whereNotNull(
-                    'confidence'
-                )
-
-                ->avg('confidence'),
-
-            1
-        );
-
-        /*
-|--------------------------------------------------------------------------
-| Most Risky Category
-|--------------------------------------------------------------------------
-*/
-
-        $riskyCategory =
-
-            (clone $query)
-
-            ->where(
-                'status',
-                'rejected'
-            )
-
-            ->selectRaw('category, COUNT(*) as total')
-
-            ->groupBy('category')
-
-            ->orderByDesc('total')
-
-            ->first();
-
-        /*
-|--------------------------------------------------------------------------
-| Most Risky Ship Mode
-|--------------------------------------------------------------------------
-*/
-
-        $riskyShipMode =
-
-            (clone $query)
-
-            ->where(
-                'status',
-                'rejected'
-            )
-
-            ->selectRaw('ship_mode, COUNT(*) as total')
-
-            ->groupBy('ship_mode')
-
-            ->orderByDesc('total')
-
-            ->first();
-
-        /*
-|--------------------------------------------------------------------------
-| DSS Decision Trend
-|--------------------------------------------------------------------------
-*/
-
-        $dssTrend =
-
-            (clone $query)
-
-            ->selectRaw('
-        DATE(created_at) as date,
-        SUM(CASE WHEN status = "approved" THEN 1 ELSE 0 END) as approved,
-        SUM(CASE WHEN status = "rejected" THEN 1 ELSE 0 END) as rejected
-    ')
-
-            ->groupBy('date')
-
-            ->orderBy('date')
-
-            ->take(10)
-
-            ->get();
-
-        return view('dashboard.index', compact(
-            'summary',
-            'region',
-            'category',
-            'yearly'
-        ) + [
-
+        return view('dashboard.index', compact('summary', 'region', 'category', 'yearly') + [
             'role' => 'financial-controller',
-
             'monthly' => [],
             'segment' => [],
             'products' => [],
-
             'dashboardData' => [
-
                 'role' => 'financial-controller',
-
                 'monthly' => [],
                 'yearly' => $yearly,
-
                 'category' => $category,
                 'region' => $region,
-
                 'segment' => [],
                 'dssTrend' => $dssTrend,
             ],
-
             'dssAnalytics' => [
-
-                'approval_rate' =>
-                $approvalRate,
-
-                'rejection_rate' =>
-                $rejectionRate,
-
-                'avg_confidence' =>
-                $avgConfidence,
-
-                'risky_category' =>
-                $riskyCategory?->category
-                    ?? '-',
-
-                'risky_ship_mode' =>
-                $riskyShipMode?->ship_mode
-                    ?? '-',
+                'total_predictions' => TransactionRequest::count(),
+                'profitable_predictions' => TransactionRequest::where('status', 'approved')->count(),
+                'risky_predictions' => TransactionRequest::where('status', 'rejected')->count(),
+                'avg_confidence' => round(TransactionRequest::whereNotNull('confidence')->avg('confidence') ?? 0, 1),
+                'approval_rate' => $approvalRate,
+                'rejection_rate' => $rejectionRate,
+                'risky_category' => $riskyCategory?->category ?? '-',
+                'risky_ship_mode' => $riskyShipMode?->ship_mode ?? '-',
             ],
-
             'executiveInsights' => [
-
                 "Approval rate mencapai {$approvalRate}% dari seluruh transaksi DSS.",
-
                 "Rata-rata confidence DSS berada di angka {$avgConfidence}% untuk seluruh approval prediction.",
-
                 "Kategori paling berisiko saat ini adalah " . ($riskyCategory?->category ?? '-') . ".",
-
                 "Ship mode paling sering mengalami reject adalah " . ($riskyShipMode?->ship_mode ?? '-') . ".",
-
             ],
-
             'intelligenceFeed' => $this->getIntelligenceFeed('financial-controller'),
-
         ]);
     }
-
 
     // ── Chief Logistics Officer ───────────────────────────────
     private function dashboardLogistics()
@@ -1388,6 +1195,36 @@ class DashboardController extends Controller
                     'ship_mode'     => ['show' => false, 'default' => 'Standard Class'],
                 ],
             ],
+            'head-analytics' => [
+                'type'        => 'analytics',
+                'title'       => 'DSS Analytics Request',
+                'description' => 'Detail pengajuan untuk analisis DSS.',
+                'fields'      => [
+                    'sales'         => ['show' => true,  'label' => 'Value ($)'],
+                    'quantity'      => ['show' => true,  'label' => 'Quantity'],
+                    'discount'      => ['show' => true,  'label' => 'Discount'],
+                    'shipping_days' => ['show' => true,  'label' => 'Shipping Days'],
+                    'category'      => ['show' => true,  'label' => 'Category', 'options' => ['Furniture', 'Office Supplies', 'Technology']],
+                    'segment'       => ['show' => true,  'label' => 'Segment', 'options' => ['Consumer', 'Corporate', 'Home Office']],
+                    'region'        => ['show' => true,  'label' => 'Region', 'options' => ['East', 'West', 'Central', 'South']],
+                    'ship_mode'     => ['show' => true,  'label' => 'Ship Mode', 'options' => ['First Class', 'Second Class', 'Standard Class', 'Same Day']],
+                ],
+            ],
+            'financial-controller' => [
+                'type'        => 'finance',
+                'title'       => 'Finance Request',
+                'description' => 'Detail pengajuan untuk kontrol finansial.',
+                'fields'      => [
+                    'sales'         => ['show' => true,  'label' => 'Total Sales ($)'],
+                    'quantity'      => ['show' => true,  'label' => 'Quantity'],
+                    'discount'      => ['show' => true,  'label' => 'Discount'],
+                    'shipping_days' => ['show' => true,  'label' => 'Shipping Days'],
+                    'category'      => ['show' => true,  'label' => 'Category', 'options' => ['Furniture', 'Office Supplies', 'Technology']],
+                    'segment'       => ['show' => true,  'label' => 'Segment', 'options' => ['Consumer', 'Corporate', 'Home Office']],
+                    'region'        => ['show' => true,  'label' => 'Region', 'options' => ['East', 'West', 'Central', 'South']],
+                    'ship_mode'     => ['show' => true,  'label' => 'Ship Mode', 'options' => ['First Class', 'Second Class', 'Standard Class', 'Same Day']],
+                ],
+            ],
         ];
     }
 
@@ -1520,12 +1357,28 @@ class DashboardController extends Controller
         } elseif ($role === 'key-account-manager') {
             $query->where('request_type', 'contract');
         }
+        // head-analytics & financial-controller can see all requests
+
 
         $transactions = $query->paginate(15);
 
         // Ambil config field untuk modal edit di view
         $requestTypeMap = $this->getRequestConfig($role);
-        $requestMeta = $requestTypeMap[$role] ?? null;
+        $requestMeta = $requestTypeMap[$role] ?? [
+            'type' => 'unknown',
+            'title' => 'Request',
+            'description' => 'Detail pengajuan.',
+            'fields' => [
+                'sales' => ['show' => true, 'label' => 'Value'],
+                'quantity' => ['show' => true, 'label' => 'Quantity'],
+                'discount' => ['show' => false, 'label' => 'Discount', 'default' => 0],
+                'shipping_days' => ['show' => false, 'label' => 'Days', 'default' => 0],
+                'category' => ['show' => true, 'label' => 'Category', 'options' => ['Furniture', 'Office Supplies', 'Technology']],
+                'segment' => ['show' => true, 'label' => 'Segment', 'options' => ['Consumer', 'Corporate', 'Home Office']],
+                'region' => ['show' => true, 'label' => 'Region', 'options' => ['East', 'West', 'Central', 'South']],
+                'ship_mode' => ['show' => false, 'label' => 'Ship Mode', 'default' => 'Standard Class'],
+            ]
+        ];
 
         // ── Historical Orders dari Flask API ──────────────────────
         $historicalPage = (int) request('historical_page', 1);
@@ -1560,6 +1413,19 @@ class DashboardController extends Controller
             'role',
             'requestMeta'
         ));
+    }
+
+    public function previewExport()
+    {
+        $transactions = TransactionRequest::latest()
+            ->with(['requester', 'approver'])
+            ->take(10) // Hanya ambil 10 untuk preview
+            ->get();
+
+        return response()->json([
+            'count' => TransactionRequest::count(),
+            'data' => $transactions
+        ]);
     }
 
     public function exportTransactions()
@@ -1610,6 +1476,25 @@ class DashboardController extends Controller
 
         session()->flash('success', 'Export transaction CSV berhasil diunduh.');
         return response()->stream($callback, 200, $headers);
+    }
+
+    public function previewAnalyticsExport()
+    {
+        $transactions = TransactionRequest::all();
+        $total = $transactions->count();
+        $approved = $transactions->where('status', 'approved')->count();
+        $rejected = $transactions->where('status', 'rejected')->count();
+        $avgConf  = round($transactions->avg('confidence') ?? 0, 1);
+
+        return response()->json([
+            'metrics' => [
+                'total' => $total,
+                'approved' => $approved,
+                'rejected' => $rejected,
+                'avg_confidence' => $avgConf . '%'
+            ],
+            'recent' => TransactionRequest::latest()->take(5)->get()
+        ]);
     }
 
     public function exportAnalyticsReport()

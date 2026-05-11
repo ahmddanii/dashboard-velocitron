@@ -19,7 +19,22 @@
             ship_mode: '',
             updateUrl: ''
         },
-        cancelUrl: ''
+        cancelUrl: '',
+        showExportPreview: false,
+        exportPreviewData: [],
+        exportTotalCount: 0,
+        isLoadingPreview: false,
+        fetchExportPreview() {
+            this.isLoadingPreview = true;
+            this.showExportPreview = true;
+            fetch('{{ route('export.preview') }}')
+                .then(res => res.json())
+                .then(data => {
+                    this.exportPreviewData = data.data;
+                    this.exportTotalCount = data.count;
+                    this.isLoadingPreview = false;
+                });
+        }
     }">
         <div class="max-w-[1440px] mx-auto">
 
@@ -29,13 +44,13 @@
                     <h2 class="font-display-lg text-display-lg">Transaction History</h2>
                     <p class="text-on-surface-variant mt-1">Riwayat keputusan DSS & data historis Superstore.</p>
                 </div>
-                @role('financial-controller')
-                    <a href="{{ route('transactions.export') }}"
-                        class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-green-600 text-white text-sm font-semibold hover:bg-green-700 transition">
+                @if(auth()->user()->hasAnyRole(['financial-controller', 'head-analytics']))
+                    <button @click="fetchExportPreview()"
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-green-600 text-white text-sm font-semibold hover:bg-green-700 transition shadow-sm hover:shadow-md">
                         <span class="material-symbols-outlined text-base">download</span>
-                        Export CSV
-                    </a>
-                @endrole
+                        Export Data
+                    </button>
+                @endif
             </div>
 
             {{-- Tab Switcher --}}
@@ -182,30 +197,32 @@
                 {{-- Filter bar --}}
                 <form method="GET" class="flex gap-3 mb-4 flex-wrap">
                     <input type="hidden" name="tab" value="historical">
-                    <select name="category" onchange="this.form.submit()"
-                        class="px-3 py-2 rounded-xl border border-outline-variant bg-white text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30">
-                        <option value="">All Categories</option>
-                        <option value="Technology"      {{ request('category') === 'Technology' ? 'selected' : '' }}>Technology</option>
-                        <option value="Furniture"       {{ request('category') === 'Furniture' ? 'selected' : '' }}>Furniture</option>
-                        <option value="Office Supplies" {{ request('category') === 'Office Supplies' ? 'selected' : '' }}>Office Supplies</option>
-                    </select>
-                    <select name="region" onchange="this.form.submit()"
-                        class="px-3 py-2 rounded-xl border border-outline-variant bg-white text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30">
-                        <option value="">All Regions</option>
-                        <option value="East"    {{ request('region') === 'East' ? 'selected' : '' }}>East</option>
-                        <option value="West"    {{ request('region') === 'West' ? 'selected' : '' }}>West</option>
-                        <option value="Central" {{ request('region') === 'Central' ? 'selected' : '' }}>Central</option>
-                        <option value="South"   {{ request('region') === 'South' ? 'selected' : '' }}>South</option>
-                    </select>
-                    <select name="segment" onchange="this.form.submit()"
-                        class="px-3 py-2 rounded-xl border border-outline-variant bg-white text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30">
-                        <option value="">All Segments</option>
-                        <option value="Consumer"    {{ request('segment') === 'Consumer' ? 'selected' : '' }}>Consumer</option>
-                        <option value="Corporate"   {{ request('segment') === 'Corporate' ? 'selected' : '' }}>Corporate</option>
-                        <option value="Home Office" {{ request('segment') === 'Home Office' ? 'selected' : '' }}>Home Office</option>
-                    </select>
+                    {{-- Category Filter --}}
+                    <x-ui.filter-select name="category" :selected="request('category')" :options="[
+                        '' => 'All Categories',
+                        'Technology' => 'Technology',
+                        'Furniture' => 'Furniture',
+                        'Office Supplies' => 'Office Supplies',
+                    ]" />
+
+                    {{-- Region Filter --}}
+                    <x-ui.filter-select name="region" :selected="request('region')" :options="[
+                        '' => 'All Regions',
+                        'East' => 'East',
+                        'West' => 'West',
+                        'Central' => 'Central',
+                        'South' => 'South',
+                    ]" />
+
+                    {{-- Segment Filter --}}
+                    <x-ui.filter-select name="segment" :selected="request('segment')" :options="[
+                        '' => 'All Segments',
+                        'Consumer' => 'Consumer',
+                        'Corporate' => 'Corporate',
+                        'Home Office' => 'Home Office',
+                    ]" />
                     @if(request('category') || request('region') || request('segment'))
-                        <a href="{{ route('transactions.history') }}"
+                        <a href="{{ route('transactions.history', ['tab' => 'historical']) }}"
                             class="px-3 py-2 rounded-xl border border-outline-variant text-sm text-on-surface-variant hover:bg-surface-container transition">
                             Reset
                         </a>
@@ -490,6 +507,96 @@
                     </form>
                 </div>
             </x-modal>
+            {{-- Export Preview Modal --}}
+            <div x-show="showExportPreview" 
+                class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0 scale-95"
+                x-transition:enter-end="opacity-100 scale-100"
+                x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="opacity-100 scale-100"
+                x-transition:leave-end="opacity-0 scale-95"
+                x-cloak>
+                
+                <div class="bg-surface rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden border border-outline-variant">
+                    {{-- Header --}}
+                    <div class="px-6 py-4 border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
+                        <div>
+                            <h3 class="text-xl font-bold text-on-surface">Pratinjau Data Export</h3>
+                            <p class="text-xs text-on-surface-variant">Menampilkan 10 data terbaru dari total <span x-text="exportTotalCount" class="font-bold text-primary"></span> baris.</p>
+                        </div>
+                        <button @click="showExportPreview = false" class="p-2 hover:bg-surface-container rounded-full transition">
+                            <span class="material-symbols-outlined text-on-surface-variant">close</span>
+                        </button>
+                    </div>
+
+                    {{-- Body --}}
+                    <div class="p-6 max-h-[60vh] overflow-y-auto">
+                        <template x-if="isLoadingPreview">
+                            <div class="flex flex-col items-center justify-center py-20 gap-4">
+                                <div class="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                                <p class="text-on-surface-variant animate-pulse font-medium">Menyiapkan data...</p>
+                            </div>
+                        </template>
+
+                        <template x-if="!isLoadingPreview">
+                            <div class="overflow-x-auto rounded-xl border border-outline-variant">
+                                <table class="w-full text-left text-xs border-collapse">
+                                    <thead class="bg-surface-container text-on-surface-variant sticky top-0 uppercase tracking-tighter font-bold">
+                                        <tr>
+                                            <th class="px-4 py-3 border-b border-outline-variant">Title</th>
+                                            <th class="px-4 py-3 border-b border-outline-variant">Type</th>
+                                            <th class="px-4 py-3 border-b border-outline-variant text-right">Sales</th>
+                                            <th class="px-4 py-3 border-b border-outline-variant text-center">Status</th>
+                                            <th class="px-4 py-3 border-b border-outline-variant">Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-outline-variant">
+                                        <template x-for="item in exportPreviewData" :key="item.id">
+                                            <tr class="hover:bg-surface-container-low transition-colors">
+                                                <td class="px-4 py-3 font-medium text-on-surface" x-text="item.title"></td>
+                                                <td class="px-4 py-3 text-on-surface-variant uppercase text-[10px]" x-text="item.request_type"></td>
+                                                <td class="px-4 py-3 text-right font-mono" x-text="'$' + parseFloat(item.sales).toLocaleString()"></td>
+                                                <td class="px-4 py-3 text-center">
+                                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                                        :class="{
+                                                            'bg-green-100 text-green-700': item.status === 'approved',
+                                                            'bg-red-100 text-red-700': item.status === 'rejected',
+                                                            'bg-amber-100 text-amber-700': item.status === 'pending'
+                                                        }"
+                                                        x-text="item.status.toUpperCase()">
+                                                    </span>
+                                                </td>
+                                                <td class="px-4 py-3 text-on-surface-variant italic" x-text="new Date(item.created_at).toLocaleDateString()"></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </template>
+                    </div>
+
+                    {{-- Footer --}}
+                    <div class="px-6 py-5 bg-surface-container-low border-t border-outline-variant flex justify-between items-center">
+                        <div class="flex items-center gap-2 text-on-surface-variant text-sm">
+                            <span class="material-symbols-outlined text-green-600">info</span>
+                            Seluruh data (<span x-text="exportTotalCount"></span> baris) akan di-export ke format .CSV
+                        </div>
+                        <div class="flex gap-3">
+                            <button @click="showExportPreview = false" 
+                                class="px-5 py-2.5 rounded-xl border border-outline-variant text-sm font-semibold text-on-surface hover:bg-surface-container transition-all">
+                                Batal
+                            </button>
+                            <a href="{{ route('transactions.export') }}" 
+                                @click="showExportPreview = false"
+                                class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-green-600 text-white text-sm font-bold hover:bg-green-700 transition shadow-lg shadow-green-200">
+                                <span class="material-symbols-outlined text-base">download</span>
+                                Download CSV Sekarang
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

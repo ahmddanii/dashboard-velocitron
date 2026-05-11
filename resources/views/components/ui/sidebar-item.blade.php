@@ -3,10 +3,23 @@
     'icon' => 'circle',
     'label' => '',
     'badge' => null,   // angka notifikasi, e.g. pending count
+    'active' => null,  // route patterns untuk status active, e.g. "dashboard.dss*"
 ])
 
 @php
-    $isActive = request()->routeIs($route);
+    // Jika ada prop active, gunakan itu. Jika tidak, gunakan prop route.
+    $activePattern = $active ?? $route;
+    
+    // Pecah string jika ada koma (untuk multiple patterns)
+    $patterns = explode(',', $activePattern);
+    
+    $isActive = false;
+    foreach($patterns as $p) {
+        if(request()->routeIs(trim($p))) {
+            $isActive = true;
+            break;
+        }
+    }
 @endphp
 
 <a href="{{ route($route) }}"

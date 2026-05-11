@@ -2,20 +2,23 @@
 
     <x-ui.card class="col-span-12 overflow-hidden">
 
-        <div class="dashboard-card-header">
+        <div class="dashboard-card-header flex justify-between items-center">
+            <div>
+                <h3 class="dashboard-title">
+                    DSS Executive Analytics
+                </h3>
+                <p class="dashboard-subtitle">
+                    Historical intelligence from DSS decisions.
+                </p>
+            </div>
 
-            <h3 class="dashboard-title">
-
-                DSS Executive Analytics
-
-            </h3>
-
-            <p class="dashboard-subtitle">
-
-                Historical intelligence from DSS decisions.
-
-            </p>
-
+            @if(auth()->user()->hasRole('head-analytics'))
+            <button @click="fetchAnalyticsPreview()" 
+                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200">
+                <span class="material-symbols-outlined text-base">download</span>
+                Export Report
+            </button>
+            @endif
         </div>
 
         <div class="dashboard-card-body">
