@@ -1,20 +1,3 @@
-@include('dashboard.partials.analytics-monitoring')
-
-<div class="flex justify-end mb-6">
-    <a href="{{ route('requests.pending') }}" class="inline-flex items-center gap-2
-        px-4 py-2 rounded-lg
-        bg-secondary text-white
-        text-sm font-semibold">
-
-        <span class="material-symbols-outlined">
-            pending_actions
-        </span>
-
-        Pending Requests
-
-    </a>
-</div>
-
 <div class="dashboard-grid">
 
     <x-ui.card class="col-span-12 lg:col-span-8 overflow-hidden">

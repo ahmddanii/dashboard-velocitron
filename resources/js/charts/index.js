@@ -24,5 +24,5 @@ export function initCharts() {
 
     initRegionChart(data.region, data.role);
 
-    initDssTrendChart(data.dss_trend);
+    initDssTrendChart(data.dssTrend);
 }

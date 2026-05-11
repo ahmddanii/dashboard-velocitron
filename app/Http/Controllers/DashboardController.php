@@ -38,6 +38,13 @@ class DashboardController extends Controller
     // ── Head of Data Analytics ────────────────────────────────
     private function dashboardAnalytics()
     {
+        $summary  = Http::timeout(5)->get("{$this->api}/summary")->json() ?? [];
+        $monthly  = Http::timeout(5)->get("{$this->api}/monthly-trend")->json() ?? [];
+        $yearly   = Http::timeout(5)->get("{$this->api}/yearly-trend")->json() ?? [];
+        $category = Http::timeout(5)->get("{$this->api}/profit-by-category")->json() ?? [];
+        $region   = Http::timeout(5)->get("{$this->api}/sales-by-region")->json() ?? [];
+        $segment  = Http::timeout(5)->get("{$this->api}/sales-by-segment")->json() ?? [];
+        $products = Http::timeout(5)->get("{$this->api}/top-products")->json() ?? [];
         /*
 |--------------------------------------------------------------------------
 | Dashboard Filters
@@ -163,57 +170,39 @@ class DashboardController extends Controller
 
             'role' => 'head-analytics',
 
-            'summary' => [],
-            'monthly' => [],
-            'yearly' => [],
-            'category' => [],
-            'region' => [],
-            'segment' => [],
-            'products' => [],
+            'summary'  => $summary,
+            'monthly'  => $monthly,
+            'yearly'   => $yearly,
+            'category' => $category,
+            'region'   => $region,
+            'segment'  => $segment,
+            'products' => $products,
 
             'dashboardData' => [
-
-                'role' => 'head-analytics',
-
-                'monthly' => [],
-                'yearly' => [],
-
-                'category' => [],
-                'region' => [],
-
-                'segment' => [],
-
+                'role'     => 'head-analytics',
+                'monthly'  => $monthly,
+                'yearly'   => $yearly,
+                'category' => $category,
+                'region'   => $region,
+                'segment'  => $segment,
                 'dssTrend' => $dssTrend,
             ],
 
             'analyticsMonitoring' => [
-
-                'prediction_volume' =>
-                $totalPredictions,
-
-                'profitable_predictions' =>
-                $profitablePredictions,
-
-                'risky_predictions' =>
-                $riskyPredictions,
-
-                'avg_confidence' =>
-                $avgConfidence,
-
-                'prediction_accuracy' =>
-                $predictionAccuracy,
+                'prediction_volume'    => $totalPredictions,
+                'profitable_predictions' => $profitablePredictions,
+                'risky_predictions'    => $riskyPredictions,
+                'avg_confidence'       => $avgConfidence,
+                'prediction_accuracy'  => $predictionAccuracy,
+                'health_status'        => $avgConfidence >= 75 ? 'Stable' : 'Monitoring Required',
+                'estimated_accuracy'   => $predictionAccuracy,
             ],
 
             'executiveInsights' => [
-
                 "Total prediction processed DSS mencapai {$totalPredictions}.",
-
                 "Prediction profitable mencapai {$profitablePredictions}.",
-
                 "Prediction risky/loss mencapai {$riskyPredictions}.",
-
                 "Average confidence DSS berada di angka {$avgConfidence}%.",
-
             ],
 
             'intelligenceFeed' =>
@@ -510,6 +499,8 @@ class DashboardController extends Controller
 
             ],
 
+            'intelligenceFeed' => $this->getIntelligenceFeed('financial-controller'),
+
         ]);
     }
 
@@ -681,31 +672,22 @@ class DashboardController extends Controller
             ],
 
             'logisticsAnalytics' => [
-
-                'total_shipment' =>
-                $totalShipment,
-
-                'approved_shipment' =>
-                $approvedShipment,
-
-                'rejected_shipment' =>
-                $rejectedShipment,
-
-                'avg_confidence' =>
-                $avgShipmentConfidence,
-
-                'most_risky_ship_mode' =>
-                $mostRiskyShipMode?->ship_mode
-                    ?? '-',
+                'total_shipment'       => $totalShipment,
+                'approved_shipment'    => $approvedShipment,
+                'rejected_shipment'    => $rejectedShipment,
+                'approval_rate'        => $totalShipment > 0
+                    ? round(($approvedShipment / $totalShipment) * 100, 1)
+                    : 0,
+                'avg_confidence'       => $avgShipmentConfidence,
+                'risky_ship_mode'      => $mostRiskyShipMode?->ship_mode ?? '-', // ← ganti key ini
             ],
 
-            "Total shipment request tercatat sebanyak {$totalShipment}.",
-
-            "Approved shipment mencapai {$approvedShipment} request.",
-
-            "Rejected shipment mencapai {$rejectedShipment} request.",
-
-            "Ship mode paling risky saat ini adalah " . ($mostRiskyShipMode?->ship_mode ?? '-') . ".",
+            'logisticsInsights' => [ // ← key ini yang tadi hilang
+                "Total shipment request tercatat sebanyak {$totalShipment}.",
+                "Approved shipment mencapai {$approvedShipment} request.",
+                "Rejected shipment mencapai {$rejectedShipment} request.",
+                "Ship mode paling risky saat ini adalah " . ($mostRiskyShipMode?->ship_mode ?? '-') . ".",
+            ],
 
             'intelligenceFeed' =>
             $this->getIntelligenceFeed(
@@ -726,6 +708,7 @@ class DashboardController extends Controller
             ->get("{$this->api}/profit-by-category")
             ->json() ?? [];
 
+        $products = Http::timeout(5)->get("{$this->api}/top-products")->json() ?? [];
         /*
 |--------------------------------------------------------------------------
 | Dashboard Filters
@@ -859,7 +842,8 @@ class DashboardController extends Controller
 
         return view('dashboard.index', compact(
             'summary',
-            'category'
+            'category',
+            'products'
         ) + [
 
             'role' => 'procurement-director',
@@ -884,34 +868,21 @@ class DashboardController extends Controller
             ],
 
             'procurementAnalytics' => [
-
-                'total_procurement' =>
-                $totalProcurement,
-
-                'approved_procurement' =>
-                $approvedProcurement,
-
-                'rejected_procurement' =>
-                $rejectedProcurement,
-
-                'avg_confidence' =>
-                $avgProcurementConfidence,
-
-                'most_rejected_category' =>
-                $mostRejectedCategory?->category
-                    ?? '-',
+                'total_procurement'    => $totalProcurement,
+                'approved_procurement' => $approvedProcurement,
+                'rejected_procurement' => $rejectedProcurement,
+                'approval_rate'        => $totalProcurement > 0
+                    ? round(($approvedProcurement / $totalProcurement) * 100, 1)
+                    : 0,
+                'avg_confidence'       => $avgProcurementConfidence,
+                'risky_category'       => $mostRejectedCategory?->category ?? '-', // ← ganti key ini
             ],
 
-            'executiveInsights' => [
-
+            'procurementInsights' => [
                 "Total procurement request tercatat sebanyak {$totalProcurement}.",
-
                 "Approved procurement mencapai {$approvedProcurement} request.",
-
                 "Rejected procurement mencapai {$rejectedProcurement} request.",
-
                 "Kategori procurement paling sering ditolak adalah " . ($mostRejectedCategory?->category ?? '-') . ".",
-
             ],
 
             'intelligenceFeed' =>
@@ -1142,16 +1113,11 @@ class DashboardController extends Controller
                     ?? '-',
             ],
 
-            'executiveInsights' => [
-
+            'kamInsights' => [
                 "Total contract request tercatat sebanyak {$totalContracts}.",
-
                 "Approved contracts mencapai {$approvedContracts}.",
-
                 "Rejected contracts mencapai {$rejectedContracts}.",
-
                 "Region kontrak tertinggi saat ini adalah " . ($topContractRegion?->region ?? '-') . ".",
-
             ],
 
             'intelligenceFeed' =>
@@ -1405,7 +1371,7 @@ class DashboardController extends Controller
         ]);
 
         return redirect()->route('requests.pending')
-            ->with('success', 'Request berhasil di-reject.');
+            ->with('error', 'Request telah ditolak.');
     }
 
     public function transactionHistory()
@@ -1476,6 +1442,7 @@ class DashboardController extends Controller
             fclose($file);
         };
 
+        session()->flash('success', 'Export transaction CSV berhasil diunduh.');
         return response()->stream($callback, 200, $headers);
     }
 
@@ -1503,6 +1470,7 @@ class DashboardController extends Controller
             fclose($file);
         };
 
+        session()->flash('success', 'DSS Monitoring Report berhasil diexport.');
         return response()->stream($callback, 200, $headers);
     }
 
@@ -1516,7 +1484,7 @@ class DashboardController extends Controller
             'procurement-director' => $query->where('request_type', 'procurement'),
             'logistics-officer'    => $query->where('request_type', 'shipment'),
             'key-account-manager'  => $query->where('request_type', 'contract'),
-            default                => null, // financial-controller sees all
+            default                => $query,
         };
 
         return $query->take(5)->get()->map(function ($item) {

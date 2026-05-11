@@ -23,15 +23,14 @@
     {{-- Sidebar --}}
     @include('layouts.partials.sidebar')
 
-    {{-- Top Bar --}}
-    @include('layouts.partials.topbar')
-
     {{-- Main Content --}}
-    <div id="app-wrapper" class="ml-64 mt-14">
+    <div id="app-wrapper" class="ml-64">
         @yield('content')
     </div>
 
     @stack('scripts')
+    {{-- Toast Notifications --}}
+    <x-ui.toast />
 </body>
 
 </html>

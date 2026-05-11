@@ -1,24 +1,6 @@
-<div class="flex justify-end mb-6">
-
-    <a href="{{ route('requests.create') }}" class="inline-flex items-center gap-2
-        px-4 py-2 rounded-lg
-        bg-secondary text-white
-        text-sm font-semibold hover:opacity-90 transition">
-
-        <span class="material-symbols-outlined">
-            add
-        </span>
-
-        Create Request
-
-    </a>
-</div>
-
-@include('dashboard.partials.procurement-intelligence')
-
 <div class="dashboard-grid">
 
-    <x-ui.card class="col-span-12 md:col-span-6 overflow-hidden">
+    <x-ui.card class="col-span-12 md:col-span-5 overflow-hidden">
 
         <div class="dashboard-card-header">
 
@@ -38,7 +20,7 @@
 
     </x-ui.card>
 
-    <x-ui.card class="col-span-12 md:col-span-6 overflow-hidden">
+    <x-ui.card class="col-span-12 md:col-span-7 overflow-hidden">
 
         <div class="dashboard-card-header">
 
@@ -72,7 +54,7 @@
                                     </div>
 
                                     <span class="inline-flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded-full
-                                                                                                                                {{ $cat['category'] === 'Technology'
+                                                                                                                                                                                {{ $cat['category'] === 'Technology'
                     ? 'bg-blue-50 text-blue-700'
                     : 'bg-amber-50 text-amber-700' }}">
 

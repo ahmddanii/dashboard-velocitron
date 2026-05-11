@@ -77,6 +77,10 @@ Route::middleware(['auth'])->group(function () {
             'exportAnalyticsReport'
         ]
     )->name('analytics.export');
+    Route::get('/test-toast', function () {
+        return redirect()->route('dashboard')
+            ->with('success', 'Toast test berhasil muncul!');
+    });
 });
 
 require __DIR__ . '/auth.php';
