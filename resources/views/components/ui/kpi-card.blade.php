@@ -5,7 +5,7 @@
     'icon'     => 'payments',
     'color'    => 'blue',   // blue | green | orange | purple | red | cyan
     'trend'    => null,     // null | 'up' | 'down' | 'neutral'
-    'trendVal' => null,     // e.g. '+12.4%'
+    'trendVal' => null,
 ])
 
 @php
@@ -21,46 +21,61 @@ $p = $palette[$color] ?? $palette['blue'];
 
 $trendIcon  = match($trend) { 'up' => 'trending_up', 'down' => 'trending_down', default => 'remove' };
 $trendColor = match($trend) { 'up' => 'text-green-600', 'down' => 'text-red-500', default => 'text-slate-400' };
+
+// Auto-detect nilai panjang agar font diperkecil otomatis
+$isLongValue = strlen((string) $value) > 10;
+$isVeryLong  = strlen((string) $value) > 16;
 @endphp
 
 <div {{ $attributes->merge(['class' => '']) }}>
     <div class="relative bg-white border border-outline-variant rounded-xl overflow-hidden
-                hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group">
+                hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group h-full">
 
         {{-- Accent top border --}}
         <div class="absolute top-0 left-0 right-0 h-0.5 {{ $p['border'] }} bg-current opacity-70"></div>
 
-        <div class="p-5 flex items-center gap-4">
+        <div class="p-4 flex items-start gap-3 h-full">
 
-            {{-- Icon --}}
-            <div class="w-12 h-12 rounded-xl {{ $p['bg'] }} flex items-center justify-center {{ $p['text'] }} shrink-0
-                        group-hover:scale-110 transition-transform duration-200">
-                <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">
+            {{-- Icon — lebih kecil agar proporsional --}}
+            <div class="w-10 h-10 rounded-lg {{ $p['bg'] }} flex items-center justify-center {{ $p['text'] }} shrink-0
+                        group-hover:scale-110 transition-transform duration-200 mt-0.5">
+                <span class="material-symbols-outlined text-xl"
+                      style="font-variation-settings:'FILL' 1; font-size: 20px;">
                     {{ $icon }}
                 </span>
             </div>
 
             {{-- Content --}}
             <div class="flex-1 min-w-0">
-                <p class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider mb-1">
+
+                {{-- Label — allow wrap, font lebih kecil --}}
+                <p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest leading-tight mb-1.5">
                     {{ $label }}
                 </p>
-                <p class="font-headline-md text-headline-md text-on-surface truncate">
+
+                {{-- Value — font size otomatis menyesuaikan panjang value --}}
+                <p class="font-bold text-on-surface leading-tight break-words
+                    @if($isVeryLong) text-base
+                    @elseif($isLongValue) text-lg
+                    @else text-2xl
+                    @endif">
                     {{ $value }}
                 </p>
 
                 {{-- Sub / Trend --}}
                 @if($trend && $trendVal)
-                    <p class="text-xs font-semibold {{ $trendColor }} flex items-center gap-0.5 mt-0.5">
-                        <span class="material-symbols-outlined" style="font-size:13px">{{ $trendIcon }}</span>
-                        {{ $trendVal }}
+                    <p class="text-[11px] font-semibold {{ $trendColor }} flex items-center gap-0.5 mt-1 flex-wrap">
+                        <span class="material-symbols-outlined"
+                              style="font-size:12px">{{ $trendIcon }}</span>
+                        <span>{{ $trendVal }}</span>
                         @if($sub)
-                            <span class="text-on-surface-variant font-normal ml-1">{{ $sub }}</span>
+                            <span class="text-on-surface-variant font-normal">{{ $sub }}</span>
                         @endif
                     </p>
                 @elseif($sub)
-                    <p class="text-xs text-on-surface-variant mt-0.5">{{ $sub }}</p>
+                    <p class="text-[11px] text-on-surface-variant mt-1 leading-snug">{{ $sub }}</p>
                 @endif
+
             </div>
         </div>
     </div>

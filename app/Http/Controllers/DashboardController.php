@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\Http;
 use App\Models\Strategy;
 use App\Models\TransactionRequest;
 
-
 class DashboardController extends Controller
 {
     private string $api = 'http://localhost:5000/api';
@@ -18,7 +17,6 @@ class DashboardController extends Controller
         $user = auth()->user();
 
         try {
-            // Data yang diambil berbeda per role
             if ($user->hasRole('head-analytics')) {
                 return $this->dashboardAnalytics();
             } elseif ($user->hasRole('financial-controller')) {
@@ -38,166 +36,272 @@ class DashboardController extends Controller
     }
 
     // ── Head of Data Analytics ────────────────────────────────
-    // Lihat semua data — full access
     private function dashboardAnalytics()
     {
-        $summary  = Http::timeout(5)->get("{$this->api}/summary")->json() ?? [];
-        $monthly  = Http::timeout(5)->get("{$this->api}/monthly-trend")->json() ?? [];
-        $yearly   = Http::timeout(5)->get("{$this->api}/yearly-trend")->json() ?? [];
-        $category = Http::timeout(5)->get("{$this->api}/profit-by-category")->json() ?? [];
-        $region   = Http::timeout(5)->get("{$this->api}/sales-by-region")->json() ?? [];
-        $segment  = Http::timeout(5)->get("{$this->api}/sales-by-segment")->json() ?? [];
-        $products = Http::timeout(5)->get("{$this->api}/top-products")->json() ?? [];
-
         /*
 |--------------------------------------------------------------------------
-| DSS Monitoring Analytics
+| Dashboard Filters
 |--------------------------------------------------------------------------
 */
 
-        $totalPredictions = TransactionRequest::count();
+        $statusFilter = request('status');
 
-        $profitablePredictions = TransactionRequest::where(
-            'prediction',
-            'Profitable'
-        )->count();
+        $periodFilter = request('period');
 
-        $riskyPredictions = TransactionRequest::where(
-            'prediction',
-            'Loss'
-        )->count();
+        $query = TransactionRequest::query();
+
+        if ($statusFilter) {
+
+            $query->where(
+                'status',
+                $statusFilter
+            );
+        }
+
+        if ($periodFilter === '7days') {
+
+            $query->where(
+                'created_at',
+                '>=',
+                now()->subDays(7)
+            );
+        } elseif ($periodFilter === '30days') {
+
+            $query->where(
+                'created_at',
+                '>=',
+                now()->subDays(30)
+            );
+        } elseif ($periodFilter === 'year') {
+
+            $query->whereYear(
+                'created_at',
+                now()->year
+            );
+        }
 
         /*
 |--------------------------------------------------------------------------
-| Average Confidence
+| DSS Monitoring
 |--------------------------------------------------------------------------
 */
+
+        $totalPredictions =
+            (clone $query)->count();
+
+        $profitablePredictions =
+
+            (clone $query)
+
+            ->where(
+                'prediction',
+                'Profitable'
+            )
+
+            ->count();
+
+        $riskyPredictions =
+
+            (clone $query)
+
+            ->where(
+                'prediction',
+                'Loss'
+            )
+
+            ->count();
 
         $avgConfidence = round(
 
-            TransactionRequest::whereNotNull(
-                'confidence'
-            )->avg('confidence'),
+            (clone $query)
+
+                ->whereNotNull(
+                    'confidence'
+                )
+
+                ->avg('confidence'),
 
             1
         );
 
-        /*
-|--------------------------------------------------------------------------
-| Prediction Accuracy Simulation
-|--------------------------------------------------------------------------
-*/
+        $predictionAccuracy =
 
-        $estimatedAccuracy =
+            $totalPredictions > 0
 
-            $avgConfidence >= 80
-            ? 92.4
+            ? round(
+                ($profitablePredictions / $totalPredictions) * 100,
+                1
+            )
 
-            : ($avgConfidence >= 70
-                ? 86.7
-                : 74.2);
+            : 0;
 
         /*
 |--------------------------------------------------------------------------
-| DSS Health Status
+| DSS Trend
 |--------------------------------------------------------------------------
 */
 
-        $dssHealth =
+        $dssTrend =
 
-            $avgConfidence >= 75
-            ? 'Stable'
+            (clone $query)
 
-            : 'Monitoring Required';
+            ->selectRaw('
+        DATE(created_at) as date,
+        SUM(CASE WHEN prediction = "Profitable" THEN 1 ELSE 0 END) as profitable,
+        SUM(CASE WHEN prediction = "Loss" THEN 1 ELSE 0 END) as risky
+    ')
 
-        /*
-|--------------------------------------------------------------------------
-| Analytics Insights
-|--------------------------------------------------------------------------
-*/
+            ->groupBy('date')
 
-        $analyticsInsights = [];
+            ->orderBy('date')
 
-        $analyticsInsights[] =
+            ->take(10)
 
-            "DSS telah memproses {$totalPredictions} prediction requests sejak sistem berjalan.";
+            ->get();
 
-        if ($avgConfidence >= 75) {
-
-            $analyticsInsights[] =
-
-                "Confidence DSS stabil di {$avgConfidence}%, menunjukkan model masih berada dalam kondisi optimal.";
-        } else {
-
-            $analyticsInsights[] =
-
-                "Confidence DSS berada di level moderat ({$avgConfidence}%). Monitoring tambahan direkomendasikan.";
-        }
-
-        $analyticsInsights[] =
-
-            "Distribusi prediction menunjukkan {$profitablePredictions} transaksi profitable dan {$riskyPredictions} transaksi berisiko.";
-
-        if ($riskyPredictions > $profitablePredictions * 0.5) {
-
-            $analyticsInsights[] =
-
-                "Risk prediction meningkat signifikan. DSS mendeteksi potensi kenaikan transaksi high-risk.";
-        }
-
-        return view('dashboard.index', compact(
-            'summary',
-            'monthly',
-            'yearly',
-            'category',
-            'region',
-            'segment',
-            'products'
-        ) + [
+        return view('dashboard.index', [
 
             'role' => 'head-analytics',
-            'analyticsMonitoring' => [
 
-                'prediction_volume' =>
-                $totalPredictions,
-
-                'avg_confidence' =>
-                $avgConfidence,
-
-                'estimated_accuracy' =>
-                $estimatedAccuracy,
-
-                'health_status' =>
-                $dssHealth,
-            ],
-
-            'analyticsInsights' =>
-            $analyticsInsights,
+            'summary' => [],
+            'monthly' => [],
+            'yearly' => [],
+            'category' => [],
+            'region' => [],
+            'segment' => [],
+            'products' => [],
 
             'dashboardData' => [
 
                 'role' => 'head-analytics',
 
-                'monthly' => $monthly,
-                'yearly' => $yearly,
+                'monthly' => [],
+                'yearly' => [],
 
-                'category' => $category,
-                'region' => $region,
+                'category' => [],
+                'region' => [],
 
-                'segment' => $segment,
-            ]
+                'segment' => [],
+
+                'dssTrend' => $dssTrend,
+            ],
+
+            'analyticsMonitoring' => [
+
+                'prediction_volume' =>
+                $totalPredictions,
+
+                'profitable_predictions' =>
+                $profitablePredictions,
+
+                'risky_predictions' =>
+                $riskyPredictions,
+
+                'avg_confidence' =>
+                $avgConfidence,
+
+                'prediction_accuracy' =>
+                $predictionAccuracy,
+            ],
+
+            'executiveInsights' => [
+
+                "Total prediction processed DSS mencapai {$totalPredictions}.",
+
+                "Prediction profitable mencapai {$profitablePredictions}.",
+
+                "Prediction risky/loss mencapai {$riskyPredictions}.",
+
+                "Average confidence DSS berada di angka {$avgConfidence}%.",
+
+            ],
+
+            'intelligenceFeed' =>
+            $this->getIntelligenceFeed(
+                'head-analytics'
+            ),
+
         ]);
     }
 
     // ── Financial Controller ──────────────────────────────────
-    // Fokus: Profit, Discount, per Region
     private function dashboardFinance()
     {
-        $summary  = Http::timeout(5)->get("{$this->api}/summary")->json() ?? [];
-        $region   = Http::timeout(5)->get("{$this->api}/sales-by-region")->json() ?? [];
-        $category = Http::timeout(5)->get("{$this->api}/profit-by-category")->json() ?? [];
-        $yearly   = Http::timeout(5)->get("{$this->api}/yearly-trend")->json() ?? [];
+        $summary  = Http::timeout(5)
+            ->get("{$this->api}/summary")
+            ->json() ?? [];
 
+        $region   = Http::timeout(5)
+            ->get("{$this->api}/sales-by-region")
+            ->json() ?? [];
+
+        $category = Http::timeout(5)
+            ->get("{$this->api}/profit-by-category")
+            ->json() ?? [];
+
+        $yearly   = Http::timeout(5)
+            ->get("{$this->api}/yearly-trend")
+            ->json() ?? [];
+
+        /*
+|--------------------------------------------------------------------------
+| Dashboard Filters
+|--------------------------------------------------------------------------
+*/
+
+        $statusFilter = request('status');
+
+        $periodFilter = request('period');
+
+        /*
+|--------------------------------------------------------------------------
+| Base Query
+|--------------------------------------------------------------------------
+*/
+
+        $query = TransactionRequest::query();
+
+        /*
+|--------------------------------------------------------------------------
+| Status Filter
+|--------------------------------------------------------------------------
+*/
+
+        if ($statusFilter) {
+
+            $query->where(
+                'status',
+                $statusFilter
+            );
+        }
+
+        /*
+|--------------------------------------------------------------------------
+| Period Filter
+|--------------------------------------------------------------------------
+*/
+
+        if ($periodFilter === '7days') {
+
+            $query->where(
+                'created_at',
+                '>=',
+                now()->subDays(7)
+            );
+        } elseif ($periodFilter === '30days') {
+
+            $query->where(
+                'created_at',
+                '>=',
+                now()->subDays(30)
+            );
+        } elseif ($periodFilter === 'year') {
+
+            $query->whereYear(
+                'created_at',
+                now()->year
+            );
+        }
 
         /*
 |--------------------------------------------------------------------------
@@ -205,17 +309,30 @@ class DashboardController extends Controller
 |--------------------------------------------------------------------------
 */
 
-        $totalTransactions = TransactionRequest::count();
+        $totalTransactions =
+            (clone $query)->count();
 
-        $approvedCount = TransactionRequest::where(
-            'status',
-            'approved'
-        )->count();
+        $approvedCount =
 
-        $rejectedCount = TransactionRequest::where(
-            'status',
-            'rejected'
-        )->count();
+            (clone $query)
+
+            ->where(
+                'status',
+                'approved'
+            )
+
+            ->count();
+
+        $rejectedCount =
+
+            (clone $query)
+
+            ->where(
+                'status',
+                'rejected'
+            )
+
+            ->count();
 
         /*
 |--------------------------------------------------------------------------
@@ -253,9 +370,11 @@ class DashboardController extends Controller
 
         $avgConfidence = round(
 
-            TransactionRequest::whereNotNull(
-                'confidence'
-            )
+            (clone $query)
+
+                ->whereNotNull(
+                    'confidence'
+                )
 
                 ->avg('confidence'),
 
@@ -268,10 +387,14 @@ class DashboardController extends Controller
 |--------------------------------------------------------------------------
 */
 
-        $riskyCategory = TransactionRequest::where(
-            'status',
-            'rejected'
-        )
+        $riskyCategory =
+
+            (clone $query)
+
+            ->where(
+                'status',
+                'rejected'
+            )
 
             ->selectRaw('category, COUNT(*) as total')
 
@@ -287,10 +410,14 @@ class DashboardController extends Controller
 |--------------------------------------------------------------------------
 */
 
-        $riskyShipMode = TransactionRequest::where(
-            'status',
-            'rejected'
-        )
+        $riskyShipMode =
+
+            (clone $query)
+
+            ->where(
+                'status',
+                'rejected'
+            )
 
             ->selectRaw('ship_mode, COUNT(*) as total')
 
@@ -300,14 +427,17 @@ class DashboardController extends Controller
 
             ->first();
 
-
         /*
-        |--------------------------------------------------------------------------
-        | DSS Decision Trend
-        |--------------------------------------------------------------------------
-        */
+|--------------------------------------------------------------------------
+| DSS Decision Trend
+|--------------------------------------------------------------------------
+*/
 
-        $dssTrend = TransactionRequest::selectRaw('
+        $dssTrend =
+
+            (clone $query)
+
+            ->selectRaw('
         DATE(created_at) as date,
         SUM(CASE WHEN status = "approved" THEN 1 ELSE 0 END) as approved,
         SUM(CASE WHEN status = "rejected" THEN 1 ELSE 0 END) as rejected
@@ -320,81 +450,6 @@ class DashboardController extends Controller
             ->take(10)
 
             ->get();
-
-        /*
-|--------------------------------------------------------------------------
-| Executive Insight Narrative
-|--------------------------------------------------------------------------
-*/
-
-        $executiveInsights = [];
-
-        /*
-|--------------------------------------------------------------------------
-| Approval Insight
-|--------------------------------------------------------------------------
-*/
-
-        if ($approvalRate >= 70) {
-
-            $executiveInsights[] =
-
-                "Approval rate DSS saat ini stabil di {$approvalRate}%, menunjukkan mayoritas transaksi masih berada dalam margin aman.";
-        } elseif ($approvalRate >= 50) {
-
-            $executiveInsights[] =
-
-                "Approval rate berada di level moderat ({$approvalRate}%). Beberapa transaksi mulai menunjukkan peningkatan risiko profitabilitas.";
-        } else {
-
-            $executiveInsights[] =
-
-                "Approval rate rendah ({$approvalRate}%). DSS mendeteksi peningkatan transaksi berisiko tinggi.";
-        }
-
-        /*
-|--------------------------------------------------------------------------
-| Risky Category Insight
-|--------------------------------------------------------------------------
-*/
-
-        if ($riskyCategory) {
-
-            $executiveInsights[] =
-
-                "Kategori {$riskyCategory->category} menjadi sumber rejection tertinggi berdasarkan historical DSS decisions.";
-        }
-
-        /*
-|--------------------------------------------------------------------------
-| Ship Mode Insight
-|--------------------------------------------------------------------------
-*/
-
-        if ($riskyShipMode) {
-
-            $executiveInsights[] =
-
-                "Ship mode {$riskyShipMode->ship_mode} menunjukkan tingkat risiko operasional tertinggi.";
-        }
-
-        /*
-|--------------------------------------------------------------------------
-| Confidence Insight
-|--------------------------------------------------------------------------
-*/
-
-        if ($avgConfidence >= 75) {
-
-            $executiveInsights[] =
-
-                "Confidence DSS berada di level tinggi ({$avgConfidence}%), menunjukkan stabilitas prediksi model.";
-        } else {
-
-            $executiveInsights[] =
-
-                "Confidence DSS masih berada di level moderat ({$avgConfidence}%). Monitoring tambahan direkomendasikan.";
-        }
 
         return view('dashboard.index', compact(
             'summary',
@@ -420,7 +475,7 @@ class DashboardController extends Controller
                 'region' => $region,
 
                 'segment' => [],
-                'dss_trend' => $dssTrend,
+                'dssTrend' => $dssTrend,
             ],
 
             'dssAnalytics' => [
@@ -443,60 +498,98 @@ class DashboardController extends Controller
                     ?? '-',
             ],
 
-            'executiveInsights' =>
-            $executiveInsights,
+            'executiveInsights' => [
+
+                "Approval rate mencapai {$approvalRate}% dari seluruh transaksi DSS.",
+
+                "Rata-rata confidence DSS berada di angka {$avgConfidence}% untuk seluruh approval prediction.",
+
+                "Kategori paling berisiko saat ini adalah " . ($riskyCategory?->category ?? '-') . ".",
+
+                "Ship mode paling sering mengalami reject adalah " . ($riskyShipMode?->ship_mode ?? '-') . ".",
+
+            ],
 
         ]);
     }
 
+
     // ── Chief Logistics Officer ───────────────────────────────
-    // Fokus: Ship Mode, Shipping Days, distribusi region
     private function dashboardLogistics()
     {
-        $summary = Http::timeout(5)
-            ->get("{$this->api}/summary")
-            ->json() ?? [];
+        $summary = Http::timeout(5)->get("{$this->api}/summary")->json() ?? [];
 
         $region = Http::timeout(5)
             ->get("{$this->api}/sales-by-region")
             ->json() ?? [];
 
-        $yearly = Http::timeout(5)
-            ->get("{$this->api}/yearly-trend")
-            ->json() ?? [];
-
-        /*
-    |--------------------------------------------------------------------------
-    | DSS Intelligence Feed
-    |--------------------------------------------------------------------------
-    */
-
-        $strategies = Strategy::latest()
-
-            ->where(
-                'target_role',
-                'logistics-officer'
-            )
-
-            ->take(5)
-
-            ->get();
-
         /*
 |--------------------------------------------------------------------------
-| Logistics DSS Analytics
+| Dashboard Filters
 |--------------------------------------------------------------------------
 */
 
-        $totalShipment = TransactionRequest::where(
-            'request_type',
-            'shipment'
-        )->count();
+        $statusFilter = request('status');
 
-        $approvedShipment = TransactionRequest::where(
-            'request_type',
-            'shipment'
-        )
+        $periodFilter = request('period');
+
+        $query = TransactionRequest::query();
+
+        if ($statusFilter) {
+
+            $query->where(
+                'status',
+                $statusFilter
+            );
+        }
+
+        if ($periodFilter === '7days') {
+
+            $query->where(
+                'created_at',
+                '>=',
+                now()->subDays(7)
+            );
+        } elseif ($periodFilter === '30days') {
+
+            $query->where(
+                'created_at',
+                '>=',
+                now()->subDays(30)
+            );
+        } elseif ($periodFilter === 'year') {
+
+            $query->whereYear(
+                'created_at',
+                now()->year
+            );
+        }
+
+        /*
+|--------------------------------------------------------------------------
+| Logistics Analytics
+|--------------------------------------------------------------------------
+*/
+
+        $totalShipment =
+
+            (clone $query)
+
+            ->where(
+                'request_type',
+                'shipment'
+            )
+
+            ->count();
+
+        $approvedShipment =
+
+            (clone $query)
+
+            ->where(
+                'request_type',
+                'shipment'
+            )
 
             ->where(
                 'status',
@@ -505,33 +598,48 @@ class DashboardController extends Controller
 
             ->count();
 
-        /*
-|--------------------------------------------------------------------------
-| Shipment Approval Rate
-|--------------------------------------------------------------------------
-*/
+        $rejectedShipment =
 
-        $shipmentApprovalRate =
+            (clone $query)
 
-            $totalShipment > 0
-
-            ? round(
-                ($approvedShipment / $totalShipment) * 100,
-                1
+            ->where(
+                'request_type',
+                'shipment'
             )
 
-            : 0;
+            ->where(
+                'status',
+                'rejected'
+            )
 
-        /*
-|--------------------------------------------------------------------------
-| Most Risky Ship Mode
-|--------------------------------------------------------------------------
-*/
+            ->count();
 
-        $mostRiskyShipMode = TransactionRequest::where(
-            'request_type',
-            'shipment'
-        )
+        $avgShipmentConfidence = round(
+
+            (clone $query)
+
+                ->where(
+                    'request_type',
+                    'shipment'
+                )
+
+                ->whereNotNull(
+                    'confidence'
+                )
+
+                ->avg('confidence'),
+
+            1
+        );
+
+        $mostRiskyShipMode =
+
+            (clone $query)
+
+            ->where(
+                'request_type',
+                'shipment'
+            )
 
             ->where(
                 'status',
@@ -546,82 +654,68 @@ class DashboardController extends Controller
 
             ->first();
 
-        /*
-|--------------------------------------------------------------------------
-| Logistics Insights
-|--------------------------------------------------------------------------
-*/
-
-        $logisticsInsights = [];
-
-        if ($shipmentApprovalRate >= 70) {
-
-            $logisticsInsights[] =
-
-                "Shipment approval rate stabil di {$shipmentApprovalRate}%, menunjukkan efisiensi distribusi masih berada dalam batas aman.";
-        } else {
-
-            $logisticsInsights[] =
-
-                "Shipment rejection meningkat. DSS mendeteksi peningkatan risiko operasional distribusi.";
-        }
-
-        if ($mostRiskyShipMode) {
-
-            $logisticsInsights[] =
-
-                "Ship mode {$mostRiskyShipMode->ship_mode} menunjukkan rejection tertinggi pada shipment transactions.";
-        }
-
         return view('dashboard.index', compact(
             'summary',
-            'region',
-            'yearly',
-            'strategies'
+            'region'
         ) + [
 
             'role' => 'logistics-officer',
 
             'monthly' => [],
+            'yearly' => [],
             'category' => [],
             'segment' => [],
             'products' => [],
-            'intelligenceFeed' =>
-            $this->getIntelligenceFeed(
-                'logistics-officer'
-            ),
-            'logisticsAnalytics' => [
-
-                'approval_rate' =>
-                $shipmentApprovalRate,
-
-                'risky_ship_mode' =>
-                $mostRiskyShipMode?->ship_mode
-                    ?? '-',
-            ],
-
-            'logisticsInsights' =>
-            $logisticsInsights,
 
             'dashboardData' => [
 
                 'role' => 'logistics-officer',
 
                 'monthly' => [],
-                'yearly' => $yearly,
+                'yearly' => [],
 
                 'category' => [],
                 'region' => $region,
 
                 'segment' => [],
+            ],
 
-            ]
+            'logisticsAnalytics' => [
+
+                'total_shipment' =>
+                $totalShipment,
+
+                'approved_shipment' =>
+                $approvedShipment,
+
+                'rejected_shipment' =>
+                $rejectedShipment,
+
+                'avg_confidence' =>
+                $avgShipmentConfidence,
+
+                'most_risky_ship_mode' =>
+                $mostRiskyShipMode?->ship_mode
+                    ?? '-',
+            ],
+
+            "Total shipment request tercatat sebanyak {$totalShipment}.",
+
+            "Approved shipment mencapai {$approvedShipment} request.",
+
+            "Rejected shipment mencapai {$rejectedShipment} request.",
+
+            "Ship mode paling risky saat ini adalah " . ($mostRiskyShipMode?->ship_mode ?? '-') . ".",
+
+            'intelligenceFeed' =>
+            $this->getIntelligenceFeed(
+                'logistics-officer'
+            ),
+
         ]);
     }
 
     // ── Director of Strategic Procurement ────────────────────
-    // Fokus: Kategori Technology & Furniture
-
     private function dashboardProcurement()
     {
         $summary = Http::timeout(5)
@@ -632,57 +726,73 @@ class DashboardController extends Controller
             ->get("{$this->api}/profit-by-category")
             ->json() ?? [];
 
-        $products = Http::timeout(5)
-            ->get("{$this->api}/top-products")
-            ->json() ?? [];
-
-        /*
-    |--------------------------------------------------------------------------
-    | Filter Category
-    |--------------------------------------------------------------------------
-    */
-
-        $category = array_filter(
-            $category,
-            fn($c) =>
-            in_array(
-                $c['category'],
-                ['Technology', 'Furniture']
-            )
-        );
-
-        /*
-    |--------------------------------------------------------------------------
-    | DSS Intelligence Feed
-    |--------------------------------------------------------------------------
-    */
-
-        $strategies = Strategy::latest()
-
-            ->where(
-                'target_role',
-                'procurement-director'
-            )
-
-            ->take(5)
-
-            ->get();
-
         /*
 |--------------------------------------------------------------------------
-| Procurement DSS Analytics
+| Dashboard Filters
 |--------------------------------------------------------------------------
 */
 
-        $totalProcurement = TransactionRequest::where(
-            'request_type',
-            'procurement'
-        )->count();
+        $statusFilter = request('status');
 
-        $approvedProcurement = TransactionRequest::where(
-            'request_type',
-            'procurement'
-        )
+        $periodFilter = request('period');
+
+        $query = TransactionRequest::query();
+
+        if ($statusFilter) {
+
+            $query->where(
+                'status',
+                $statusFilter
+            );
+        }
+
+        if ($periodFilter === '7days') {
+
+            $query->where(
+                'created_at',
+                '>=',
+                now()->subDays(7)
+            );
+        } elseif ($periodFilter === '30days') {
+
+            $query->where(
+                'created_at',
+                '>=',
+                now()->subDays(30)
+            );
+        } elseif ($periodFilter === 'year') {
+
+            $query->whereYear(
+                'created_at',
+                now()->year
+            );
+        }
+
+        /*
+|--------------------------------------------------------------------------
+| Procurement Analytics
+|--------------------------------------------------------------------------
+*/
+
+        $totalProcurement =
+
+            (clone $query)
+
+            ->where(
+                'request_type',
+                'procurement'
+            )
+
+            ->count();
+
+        $approvedProcurement =
+
+            (clone $query)
+
+            ->where(
+                'request_type',
+                'procurement'
+            )
 
             ->where(
                 'status',
@@ -691,33 +801,48 @@ class DashboardController extends Controller
 
             ->count();
 
-        /*
-|--------------------------------------------------------------------------
-| Approval Rate
-|--------------------------------------------------------------------------
-*/
+        $rejectedProcurement =
 
-        $procurementApprovalRate =
+            (clone $query)
 
-            $totalProcurement > 0
-
-            ? round(
-                ($approvedProcurement / $totalProcurement) * 100,
-                1
+            ->where(
+                'request_type',
+                'procurement'
             )
 
-            : 0;
+            ->where(
+                'status',
+                'rejected'
+            )
 
-        /*
-|--------------------------------------------------------------------------
-| Most Rejected Procurement Category
-|--------------------------------------------------------------------------
-*/
+            ->count();
 
-        $mostRejectedCategory = TransactionRequest::where(
-            'request_type',
-            'procurement'
-        )
+        $avgProcurementConfidence = round(
+
+            (clone $query)
+
+                ->where(
+                    'request_type',
+                    'procurement'
+                )
+
+                ->whereNotNull(
+                    'confidence'
+                )
+
+                ->avg('confidence'),
+
+            1
+        );
+
+        $mostRejectedCategory =
+
+            (clone $query)
+
+            ->where(
+                'request_type',
+                'procurement'
+            )
 
             ->where(
                 'status',
@@ -732,38 +857,9 @@ class DashboardController extends Controller
 
             ->first();
 
-        /*
-|--------------------------------------------------------------------------
-| Procurement Insights
-|--------------------------------------------------------------------------
-*/
-
-        $procurementInsights = [];
-
-        if ($procurementApprovalRate >= 70) {
-
-            $procurementInsights[] =
-
-                "Procurement approval rate stabil di {$procurementApprovalRate}%, menunjukkan supply planning masih berada dalam margin aman.";
-        } else {
-
-            $procurementInsights[] =
-
-                "Procurement rejection meningkat. DSS mendeteksi potensi risiko profitabilitas pada beberapa pengadaan.";
-        }
-
-        if ($mostRejectedCategory) {
-
-            $procurementInsights[] =
-
-                "Kategori {$mostRejectedCategory->category} menjadi procurement category dengan rejection tertinggi.";
-        }
-
         return view('dashboard.index', compact(
             'summary',
-            'category',
-            'products',
-            'strategies'
+            'category'
         ) + [
 
             'role' => 'procurement-director',
@@ -772,22 +868,8 @@ class DashboardController extends Controller
             'yearly' => [],
             'region' => [],
             'segment' => [],
-            'intelligenceFeed' =>
-            $this->getIntelligenceFeed(
-                'procurement-director'
-            ),
-            'procurementAnalytics' => [
+            'products' => [],
 
-                'approval_rate' =>
-                $procurementApprovalRate,
-
-                'risky_category' =>
-                $mostRejectedCategory?->category
-                    ?? '-',
-            ],
-
-            'procurementInsights' =>
-            $procurementInsights,
             'dashboardData' => [
 
                 'role' => 'procurement-director',
@@ -799,13 +881,49 @@ class DashboardController extends Controller
                 'region' => [],
 
                 'segment' => [],
+            ],
 
-            ]
+            'procurementAnalytics' => [
+
+                'total_procurement' =>
+                $totalProcurement,
+
+                'approved_procurement' =>
+                $approvedProcurement,
+
+                'rejected_procurement' =>
+                $rejectedProcurement,
+
+                'avg_confidence' =>
+                $avgProcurementConfidence,
+
+                'most_rejected_category' =>
+                $mostRejectedCategory?->category
+                    ?? '-',
+            ],
+
+            'executiveInsights' => [
+
+                "Total procurement request tercatat sebanyak {$totalProcurement}.",
+
+                "Approved procurement mencapai {$approvedProcurement} request.",
+
+                "Rejected procurement mencapai {$rejectedProcurement} request.",
+
+                "Kategori procurement paling sering ditolak adalah " . ($mostRejectedCategory?->category ?? '-') . ".",
+
+            ],
+
+            'intelligenceFeed' =>
+            $this->getIntelligenceFeed(
+                'procurement-director'
+            ),
+
         ]);
     }
 
+
     // ── Key Account Manager ───────────────────────────────────
-    // Fokus: Segmen Corporate & Home Office
     private function dashboardKAM()
     {
         $summary = Http::timeout(5)
@@ -820,34 +938,152 @@ class DashboardController extends Controller
             ->get("{$this->api}/sales-by-region")
             ->json() ?? [];
 
-        $monthly = Http::timeout(5)
-            ->get("{$this->api}/monthly-trend")
-            ->json() ?? [];
-
         /*
-    |--------------------------------------------------------------------------
-    | Filter Segment
-    |--------------------------------------------------------------------------
-    */
+|--------------------------------------------------------------------------
+| Filter Segment
+|--------------------------------------------------------------------------
+*/
 
-        $segment = array_values(
-
-            array_filter(
-                $segment,
-
-                fn($s) =>
-                in_array(
-                    $s['segment'],
-                    ['Corporate', 'Home Office']
-                )
+        $segment = array_filter(
+            $segment,
+            fn($s) =>
+            in_array(
+                $s['segment'],
+                ['Corporate', 'Home Office']
             )
         );
 
         /*
-    |--------------------------------------------------------------------------
-    | DSS Intelligence Feed
-    |--------------------------------------------------------------------------
-    */
+|--------------------------------------------------------------------------
+| Dashboard Filters
+|--------------------------------------------------------------------------
+*/
+
+        $statusFilter = request('status');
+
+        $periodFilter = request('period');
+
+        $query = TransactionRequest::query();
+
+        if ($statusFilter) {
+
+            $query->where(
+                'status',
+                $statusFilter
+            );
+        }
+
+        if ($periodFilter === '7days') {
+
+            $query->where(
+                'created_at',
+                '>=',
+                now()->subDays(7)
+            );
+        } elseif ($periodFilter === '30days') {
+
+            $query->where(
+                'created_at',
+                '>=',
+                now()->subDays(30)
+            );
+        } elseif ($periodFilter === 'year') {
+
+            $query->whereYear(
+                'created_at',
+                now()->year
+            );
+        }
+
+        /*
+|--------------------------------------------------------------------------
+| KAM Analytics
+|--------------------------------------------------------------------------
+*/
+
+        $totalContracts =
+
+            (clone $query)
+
+            ->where(
+                'request_type',
+                'contract'
+            )
+
+            ->count();
+
+        $approvedContracts =
+
+            (clone $query)
+
+            ->where(
+                'request_type',
+                'contract'
+            )
+
+            ->where(
+                'status',
+                'approved'
+            )
+
+            ->count();
+
+        $rejectedContracts =
+
+            (clone $query)
+
+            ->where(
+                'request_type',
+                'contract'
+            )
+
+            ->where(
+                'status',
+                'rejected'
+            )
+
+            ->count();
+
+        $avgContractConfidence = round(
+
+            (clone $query)
+
+                ->where(
+                    'request_type',
+                    'contract'
+                )
+
+                ->whereNotNull(
+                    'confidence'
+                )
+
+                ->avg('confidence'),
+
+            1
+        );
+
+        $topContractRegion =
+
+            (clone $query)
+
+            ->where(
+                'request_type',
+                'contract'
+            )
+
+            ->selectRaw('region, COUNT(*) as total')
+
+            ->groupBy('region')
+
+            ->orderByDesc('total')
+
+            ->first();
+
+        /*
+|--------------------------------------------------------------------------
+| DSS Intelligence Feed
+|--------------------------------------------------------------------------
+*/
 
         $strategies = Strategy::latest()
 
@@ -859,114 +1095,6 @@ class DashboardController extends Controller
             ->take(5)
 
             ->get();
-
-        /*
-|--------------------------------------------------------------------------
-| KAM DSS Analytics
-|--------------------------------------------------------------------------
-*/
-
-        $totalContracts = TransactionRequest::where(
-            'request_type',
-            'contract'
-        )->count();
-
-        $approvedContracts = TransactionRequest::where(
-            'request_type',
-            'contract'
-        )
-
-            ->where(
-                'status',
-                'approved'
-            )
-
-            ->count();
-
-        /*
-|--------------------------------------------------------------------------
-| Contract Approval Rate
-|--------------------------------------------------------------------------
-*/
-
-        $contractApprovalRate =
-
-            $totalContracts > 0
-
-            ? round(
-                ($approvedContracts / $totalContracts) * 100,
-                1
-            )
-
-            : 0;
-
-        /*
-|--------------------------------------------------------------------------
-| Most Profitable Segment
-|--------------------------------------------------------------------------
-*/
-
-        $topSegment = collect($segment)
-
-            ->sortByDesc(
-                fn($s) =>
-                (float) $s['total_profit']
-            )
-
-            ->first();
-
-        /*
-|--------------------------------------------------------------------------
-| Strongest Sales Region
-|--------------------------------------------------------------------------
-*/
-
-        $topRegion = collect($region)
-
-            ->sortByDesc(
-                fn($r) =>
-                (float) $r['total_sales']
-            )
-
-            ->first();
-
-        /*
-|--------------------------------------------------------------------------
-| KAM Insights
-|--------------------------------------------------------------------------
-*/
-
-        $kamInsights = [];
-
-        if ($contractApprovalRate >= 70) {
-
-            $kamInsights[] =
-
-                "Contract approval rate stabil di {$contractApprovalRate}%, menunjukkan client profitability masih berada dalam margin aman.";
-        } else {
-
-            $kamInsights[] =
-
-                "Contract rejection meningkat. DSS mendeteksi peningkatan risiko profitabilitas pada beberapa kontrak klien.";
-        }
-
-        if ($topSegment) {
-
-            $kamInsights[] =
-
-                "Segment {$topSegment['segment']} menghasilkan profit tertinggi dengan total profit sebesar $"
-                . number_format($topSegment['total_profit'], 0)
-                . ".";
-        }
-
-        if ($topRegion) {
-
-            $kamInsights[] =
-
-                "Region {$topRegion['region']} mendominasi sales contract dengan total sales sebesar $"
-                . number_format($topRegion['total_sales'], 0)
-                . ".";
-        }
 
         return view('dashboard.index', compact(
             'summary',
@@ -981,45 +1109,60 @@ class DashboardController extends Controller
             'yearly' => [],
             'category' => [],
             'products' => [],
-            'intelligenceFeed' =>
-            $this->getIntelligenceFeed(
-                'key-account-manager'
-            ),
-            'kamAnalytics' => [
-
-                'approval_rate' =>
-                $contractApprovalRate,
-
-                'top_segment' =>
-                $topSegment['segment']
-                    ?? '-',
-
-                'top_region' =>
-                $topRegion['region']
-                    ?? '-',
-            ],
-
-            'kamInsights' =>
-            $kamInsights,
 
             'dashboardData' => [
 
                 'role' => 'key-account-manager',
 
-                'monthly' => $monthly,
+                'monthly' => [],
                 'yearly' => [],
 
                 'category' => [],
                 'region' => $region,
 
                 'segment' => $segment,
+            ],
 
+            'kamAnalytics' => [
 
-            ]
+                'total_contracts' =>
+                $totalContracts,
+
+                'approved_contracts' =>
+                $approvedContracts,
+
+                'rejected_contracts' =>
+                $rejectedContracts,
+
+                'avg_confidence' =>
+                $avgContractConfidence,
+
+                'top_region' =>
+                $topContractRegion?->region
+                    ?? '-',
+            ],
+
+            'executiveInsights' => [
+
+                "Total contract request tercatat sebanyak {$totalContracts}.",
+
+                "Approved contracts mencapai {$approvedContracts}.",
+
+                "Rejected contracts mencapai {$rejectedContracts}.",
+
+                "Region kontrak tertinggi saat ini adalah " . ($topContractRegion?->region ?? '-') . ".",
+
+            ],
+
+            'intelligenceFeed' =>
+            $this->getIntelligenceFeed(
+                'key-account-manager'
+            ),
+
         ]);
     }
 
-    // ── DSS (hanya head-analytics & financial-controller) ────
+    // ── DSS ──────────────────────────────────────────────────
     public function dss()
     {
         return view('dashboard.dss');
@@ -1039,662 +1182,270 @@ class DashboardController extends Controller
         ]);
 
         try {
+            $response = Http::timeout(5)->post("{$this->api}/predict-profit", [
+                'sales'         => (float) $request->sales,
+                'quantity'      => (int)   $request->quantity,
+                'discount'      => (float) $request->discount,
+                'shipping_days' => (int)   $request->shipping_days,
+                'category'      => $request->category,
+                'segment'       => $request->segment,
+                'region'        => $request->region,
+                'ship_mode'     => $request->ship_mode,
+            ]);
 
-            $response = Http::timeout(5)
-                ->post("{$this->api}/predict-profit", [
-
-                    'sales' => (float) $request->sales,
-
-                    'quantity' =>
-                    (int) $request->quantity,
-
-                    'discount' =>
-                    (float) $request->discount,
-
-                    'shipping_days' =>
-                    (int) $request->shipping_days,
-
-                    'category' =>
-                    $request->category,
-
-                    'segment' =>
-                    $request->segment,
-
-                    'region' =>
-                    $request->region,
-
-                    'ship_mode' =>
-                    $request->ship_mode,
-                ]);
-
-            $result = $response->json();
-
-            $prediction =
-                $result['prediction']
-                ?? 'Unknown';
-
-            $confidence =
-                $result['confidence']
-                ?? 0;
-
-            /*
-        |--------------------------------------------------------------------------
-        | DSS Recommendation Engine
-        |--------------------------------------------------------------------------
-        */
+            $result     = $response->json();
+            $prediction = $result['prediction'] ?? 'Unknown';
+            $confidence = $result['confidence'] ?? 0;
 
             if ($prediction === 'Loss') {
-
                 Strategy::create([
-
-                    'target_role' =>
-                    'logistics-officer',
-
-                    'title' =>
-                    'Optimasi Pengiriman',
-
-                    'recommendation' =>
-                    'Gunakan Standard Class untuk menekan biaya distribusi.',
-
-                    'prediction' =>
-                    $prediction,
-
-                    'confidence' =>
-                    $confidence,
+                    'target_role'    => 'logistics-officer',
+                    'title'          => 'Optimasi Pengiriman',
+                    'recommendation' => 'Gunakan Standard Class untuk menekan biaya distribusi.',
+                    'prediction'     => $prediction,
+                    'confidence'     => $confidence,
                 ]);
 
                 Strategy::create([
-
-                    'target_role' =>
-                    'procurement-director',
-
-                    'title' =>
-                    'Batasi Margin Procurement',
-
-                    'recommendation' =>
-                    'Kurangi pembelian pada kategori dengan margin rendah.',
-
-                    'prediction' =>
-                    $prediction,
-
-                    'confidence' =>
-                    $confidence,
+                    'target_role'    => 'procurement-director',
+                    'title'          => 'Batasi Margin Procurement',
+                    'recommendation' => 'Kurangi pembelian pada kategori dengan margin rendah.',
+                    'prediction'     => $prediction,
+                    'confidence'     => $confidence,
                 ]);
 
                 Strategy::create([
-
-                    'target_role' =>
-                    'key-account-manager',
-
-                    'title' =>
-                    'Batasi Diskon Client',
-
-                    'recommendation' =>
-                    'Hindari pemberian diskon tinggi pada kontrak baru.',
-
-                    'prediction' =>
-                    $prediction,
-
-                    'confidence' =>
-                    $confidence,
+                    'target_role'    => 'key-account-manager',
+                    'title'          => 'Batasi Diskon Client',
+                    'recommendation' => 'Hindari pemberian diskon tinggi pada kontrak baru.',
+                    'prediction'     => $prediction,
+                    'confidence'     => $confidence,
                 ]);
             }
         } catch (\Exception $e) {
-
-            return back()->withErrors([
-                'api' =>
-                'Flask API tidak dapat dihubungi.'
-            ]);
+            return back()->withErrors(['api' => 'Flask API tidak dapat dihubungi.']);
         }
 
         return view('dashboard.dss', [
-
             'result' => $result,
-
-            'input' =>
-            $request->all(),
+            'input'  => $request->all(),
         ]);
     }
 
     public function createRequest()
     {
-        $role = auth()->user()
-
-            ->roles
-
-            ->first()
-
-            ?->name;
-
-        /*
-        |--------------------------------------------------------------------------
-        | Role Mapping
-        |--------------------------------------------------------------------------
-        */
+        $role = auth()->user()->roles->first()?->name;
 
         $requestTypeMap = [
-
             'procurement-director' => [
-
-                'type' =>
-                'procurement',
-
-                'title' =>
-                'Create Procurement Request',
-
-                'description' =>
-                'Ajukan pengadaan inventory & supplier procurement.',
+                'type'        => 'procurement',
+                'title'       => 'Create Procurement Request',
+                'description' => 'Ajukan pengadaan inventory & supplier procurement.',
             ],
-
             'logistics-officer' => [
-
-                'type' =>
-                'shipment',
-
-                'title' =>
-                'Create Shipment Request',
-
-                'description' =>
-                'Ajukan distribusi & shipment approval.',
+                'type'        => 'shipment',
+                'title'       => 'Create Shipment Request',
+                'description' => 'Ajukan distribusi & shipment approval.',
             ],
-
             'key-account-manager' => [
-
-                'type' =>
-                'contract',
-
-                'title' =>
-                'Create Contract Request',
-
-                'description' =>
-                'Ajukan kontrak client & discount approval.',
+                'type'        => 'contract',
+                'title'       => 'Create Contract Request',
+                'description' => 'Ajukan kontrak client & discount approval.',
             ],
         ];
 
-        $requestMeta =
-
-            $requestTypeMap[$role]
-
-            ?? null;
-
+        $requestMeta = $requestTypeMap[$role] ?? null;
         abort_if(!$requestMeta, 403);
 
-        return view(
-            'requests.create',
-            compact(
-                'requestMeta'
-            )
-        );
+        return view('requests.create', compact('requestMeta'));
     }
 
     public function storeRequest(Request $request)
     {
-
-        $role = auth()->user()
-
-            ->roles
-
-            ->first()
-
-            ?->name;
+        $role = auth()->user()->roles->first()?->name;
 
         $requestTypeMap = [
-
-            'procurement-director' =>
-            'procurement',
-
-            'logistics-officer' =>
-            'shipment',
-
-            'key-account-manager' =>
-            'contract',
+            'procurement-director' => 'procurement',
+            'logistics-officer'    => 'shipment',
+            'key-account-manager'  => 'contract',
         ];
 
-
         $request->validate([
-
-            'title' =>
-            'required|max:255',
-
-            'description' =>
-            'nullable',
-
-            'sales' =>
-            'required|numeric|min:0',
-
-            'quantity' =>
-            'required|integer|min:1',
-
-            'discount' =>
-            'required|numeric|min:0|max:0.8',
-
-            'shipping_days' =>
-            'required|integer|min:0|max:7',
-
-            'category' =>
-            'required',
-
-            'segment' =>
-            'required',
-
-            'region' =>
-            'required',
-
-            'ship_mode' =>
-            'required',
+            'title'         => 'required|max:255',
+            'description'   => 'nullable',
+            'sales'         => 'required|numeric|min:0',
+            'quantity'      => 'required|integer|min:1',
+            'discount'      => 'required|numeric|min:0|max:0.8',
+            'shipping_days' => 'required|integer|min:0|max:7',
+            'category'      => 'required',
+            'segment'       => 'required',
+            'region'        => 'required',
+            'ship_mode'     => 'required',
         ]);
 
         TransactionRequest::create([
-
-            'requester_id' =>
-            auth()->id(),
-
-            'request_type' =>
-
-            $requestTypeMap[$role]
-                ?? 'unknown',
-
-            'title' =>
-            $request->title,
-
-            'description' =>
-            $request->description,
-
-            'sales' =>
-            $request->sales,
-
-            'quantity' =>
-            $request->quantity,
-
-            'discount' =>
-            $request->discount,
-
-            'shipping_days' =>
-            $request->shipping_days,
-
-            'category' =>
-            $request->category,
-
-            'segment' =>
-            $request->segment,
-
-            'region' =>
-            $request->region,
-
-            'ship_mode' =>
-            $request->ship_mode,
-
-            'status' =>
-            'pending',
+            'requester_id'  => auth()->id(),
+            'request_type'  => $requestTypeMap[$role] ?? 'unknown',
+            'title'         => $request->title,
+            'description'   => $request->description,
+            'sales'         => $request->sales,
+            'quantity'      => $request->quantity,
+            'discount'      => $request->discount,
+            'shipping_days' => $request->shipping_days,
+            'category'      => $request->category,
+            'segment'       => $request->segment,
+            'region'        => $request->region,
+            'ship_mode'     => $request->ship_mode,
+            'status'        => 'pending',
         ]);
 
-        return redirect()
-
-            ->route('dashboard')
-
-            ->with(
-                'success',
-                'Request berhasil diajukan ke Financial Controller.'
-            );
+        return redirect()->route('dashboard')
+            ->with('success', 'Request berhasil diajukan ke Financial Controller.');
     }
 
     public function pendingRequests()
     {
         $requests = TransactionRequest::latest()
-
             ->where('status', 'pending')
-
             ->with('requester')
-
             ->get();
 
-        return view(
-            'requests.pending',
-            compact('requests')
-        );
+        return view('requests.pending', compact('requests'));
     }
 
     public function reviewRequest($id)
     {
         $requestData = TransactionRequest::findOrFail($id);
 
-        /*
-    |--------------------------------------------------------------------------
-    | DSS Prediction Request
-    |--------------------------------------------------------------------------
-    */
-
         try {
+            $response = Http::timeout(10)->post("{$this->api}/predict-profit", [
+                'sales'         => (float) $requestData->sales,
+                'quantity'      => (int)   $requestData->quantity,
+                'discount'      => (float) $requestData->discount,
+                'shipping_days' => (int)   $requestData->shipping_days,
+                'category'      => $requestData->category,
+                'segment'       => $requestData->segment,
+                'region'        => $requestData->region,
+                'ship_mode'     => $requestData->ship_mode,
+            ]);
 
-            $response = Http::timeout(10)
-
-                ->post("{$this->api}/predict-profit", [
-
-                    'sales' =>
-                    (float) $requestData->sales,
-
-                    'quantity' =>
-                    (int) $requestData->quantity,
-
-                    'discount' =>
-                    (float) $requestData->discount,
-
-                    'shipping_days' =>
-                    (int) $requestData->shipping_days,
-
-                    'category' =>
-                    $requestData->category,
-
-                    'segment' =>
-                    $requestData->segment,
-
-                    'region' =>
-                    $requestData->region,
-
-                    'ship_mode' =>
-                    $requestData->ship_mode,
-                ]);
-
+            $result = $response->json();
 
             $requestData->update([
-
-                'prediction' =>
-                $result['label_id'] ?? null,
-
-                'confidence' =>
-                $result['confidence'] ?? null,
+                'prediction' => $result['label_id'] ?? null,
+                'confidence' => $result['confidence'] ?? null,
             ]);
-            $result = $response->json();
         } catch (\Exception $e) {
-
             $result = null;
         }
 
-        return view(
-            'requests.review',
-            compact(
-                'requestData',
-                'result'
-            )
-        );
+        return view('requests.review', compact('requestData', 'result'));
     }
 
     public function approveRequest($id)
     {
         $requestData = TransactionRequest::findOrFail($id);
 
-        /*
-    |--------------------------------------------------------------------------
-    | DSS Prediction
-    |--------------------------------------------------------------------------
-    */
-
         try {
-
-            $response = Http::timeout(10)
-
-                ->post("{$this->api}/predict-profit", [
-
-                    'sales' =>
-                    (float) $requestData->sales,
-
-                    'quantity' =>
-                    (int) $requestData->quantity,
-
-                    'discount' =>
-                    (float) $requestData->discount,
-
-                    'shipping_days' =>
-                    (int) $requestData->shipping_days,
-
-                    'category' =>
-                    $requestData->category,
-
-                    'segment' =>
-                    $requestData->segment,
-
-                    'region' =>
-                    $requestData->region,
-
-                    'ship_mode' =>
-                    $requestData->ship_mode,
-                ]);
+            $response = Http::timeout(10)->post("{$this->api}/predict-profit", [
+                'sales'         => (float) $requestData->sales,
+                'quantity'      => (int)   $requestData->quantity,
+                'discount'      => (float) $requestData->discount,
+                'shipping_days' => (int)   $requestData->shipping_days,
+                'category'      => $requestData->category,
+                'segment'       => $requestData->segment,
+                'region'        => $requestData->region,
+                'ship_mode'     => $requestData->ship_mode,
+            ]);
 
             $result = $response->json();
         } catch (\Exception $e) {
-
             $result = null;
         }
 
-        /*
-    |--------------------------------------------------------------------------
-    | Update Transaction
-    |--------------------------------------------------------------------------
-    */
-
         $requestData->update([
-
-            'status' => 'approved',
-
-            'prediction' =>
-
-            $result['label_id']
-                ?? null,
-
-            'confidence' =>
-
-            $result['prob_profitable']
-                ?? null,
-
+            'status'      => 'approved',
+            'prediction'  => $result['label_id'] ?? null,
+            'confidence'  => $result['prob_profitable'] ?? null,
             'approved_by' => auth()->id(),
-
             'approved_at' => now(),
         ]);
 
-        return redirect()
-
-            ->route('requests.pending')
-
-            ->with(
-                'success',
-                'Request berhasil di-approve.'
-            );
+        return redirect()->route('requests.pending')
+            ->with('success', 'Request berhasil di-approve.');
     }
 
     public function rejectRequest($id)
     {
         $requestData = TransactionRequest::findOrFail($id);
 
-        /*
-    |--------------------------------------------------------------------------
-    | DSS Prediction
-    |--------------------------------------------------------------------------
-    */
-
         try {
-
-            $response = Http::timeout(10)
-
-                ->post("{$this->api}/predict-profit", [
-
-                    'sales' =>
-                    (float) $requestData->sales,
-
-                    'quantity' =>
-                    (int) $requestData->quantity,
-
-                    'discount' =>
-                    (float) $requestData->discount,
-
-                    'shipping_days' =>
-                    (int) $requestData->shipping_days,
-
-                    'category' =>
-                    $requestData->category,
-
-                    'segment' =>
-                    $requestData->segment,
-
-                    'region' =>
-                    $requestData->region,
-
-                    'ship_mode' =>
-                    $requestData->ship_mode,
-                ]);
+            $response = Http::timeout(10)->post("{$this->api}/predict-profit", [
+                'sales'         => (float) $requestData->sales,
+                'quantity'      => (int)   $requestData->quantity,
+                'discount'      => (float) $requestData->discount,
+                'shipping_days' => (int)   $requestData->shipping_days,
+                'category'      => $requestData->category,
+                'segment'       => $requestData->segment,
+                'region'        => $requestData->region,
+                'ship_mode'     => $requestData->ship_mode,
+            ]);
 
             $result = $response->json();
         } catch (\Exception $e) {
-
             $result = null;
         }
 
-        /*
-    |--------------------------------------------------------------------------
-    | Update Transaction
-    |--------------------------------------------------------------------------
-    */
-
         $requestData->update([
-
-            'status' => 'rejected',
-
-            'prediction' =>
-
-            $result['label_id']
-                ?? null,
-
-            'confidence' =>
-
-            $result['prob_profitable']
-                ?? null,
-
+            'status'      => 'rejected',
+            'prediction'  => $result['label_id'] ?? null,
+            'confidence'  => $result['prob_profitable'] ?? null,
             'approved_by' => auth()->id(),
-
             'approved_at' => now(),
         ]);
 
-        return redirect()
-
-            ->route('requests.pending')
-
-            ->with(
-                'success',
-                'Request berhasil di-reject.'
-            );
+        return redirect()->route('requests.pending')
+            ->with('success', 'Request berhasil di-reject.');
     }
 
     public function transactionHistory()
     {
-        $role = auth()->user()
-
-            ->roles
-
-            ->first()
-
-            ?->name;
-
-        /*
-    |--------------------------------------------------------------------------
-    | Base Query
-    |--------------------------------------------------------------------------
-    */
+        $role = auth()->user()->roles->first()?->name;
 
         $query = TransactionRequest::latest()
-
-            ->whereIn('status', [
-                'approved',
-                'rejected'
-            ])
-
-            ->with([
-                'requester',
-                'approver'
-            ]);
-
-        /*
-    |--------------------------------------------------------------------------
-    | Role-Based Visibility
-    |--------------------------------------------------------------------------
-    */
+            ->whereIn('status', ['approved', 'rejected'])
+            ->with(['requester', 'approver']);
 
         if ($role === 'procurement-director') {
-
-            $query->where(
-                'request_type',
-                'procurement'
-            );
+            $query->where('request_type', 'procurement');
         } elseif ($role === 'logistics-officer') {
-
-            $query->where(
-                'request_type',
-                'shipment'
-            );
+            $query->where('request_type', 'shipment');
         } elseif ($role === 'key-account-manager') {
-
-            $query->where(
-                'request_type',
-                'contract'
-            );
+            $query->where('request_type', 'contract');
         }
+        // financial-controller sees all
 
-        /*
-    |--------------------------------------------------------------------------
-    | Financial Controller
-    |--------------------------------------------------------------------------
-    */
+        $transactions = $query->paginate(15);
 
-        // financial-controller
-        // sees all transactions
-
-        $transactions = $query
-
-            ->paginate(15);
-
-        return view(
-            'transactions.history',
-            compact(
-                'transactions'
-            )
-        );
+        return view('transactions.history', compact('transactions'));
     }
 
     public function exportTransactions()
     {
         $transactions = TransactionRequest::latest()
-
-            ->with([
-                'requester',
-                'approver'
-            ])
-
+            ->with(['requester', 'approver'])
             ->get();
 
-        $filename =
-            'transaction-report-'
-            . now()->format('Ymd_His')
-            . '.csv';
-
-        $headers = [
-
-            'Content-Type' =>
-            'text/csv',
-
-            'Content-Disposition' =>
-            "attachment; filename={$filename}",
+        $filename = 'transaction-report-' . now()->format('Ymd_His') . '.csv';
+        $headers  = [
+            'Content-Type'        => 'text/csv',
+            'Content-Disposition' => "attachment; filename={$filename}",
         ];
 
         $callback = function () use ($transactions) {
-
             $file = fopen('php://output', 'w');
 
-            /*
-        |--------------------------------------------------------------------------
-        | CSV Header
-        |--------------------------------------------------------------------------
-        */
-
             fputcsv($file, [
-
                 'Title',
                 'Request Type',
                 'Requester',
@@ -1707,34 +1458,17 @@ class DashboardController extends Controller
                 'Created At',
             ]);
 
-            /*
-        |--------------------------------------------------------------------------
-        | CSV Rows
-        |--------------------------------------------------------------------------
-        */
-
             foreach ($transactions as $t) {
-
                 fputcsv($file, [
-
                     $t->title,
-
                     $t->request_type,
-
                     $t->requester?->name,
-
                     $t->sales,
-
                     $t->quantity,
-
                     $t->prediction,
-
                     $t->confidence,
-
                     strtoupper($t->status),
-
                     $t->approver?->name,
-
                     $t->created_at,
                 ]);
             }
@@ -1742,210 +1476,60 @@ class DashboardController extends Controller
             fclose($file);
         };
 
-        return response()
-
-            ->stream($callback, 200, $headers);
+        return response()->stream($callback, 200, $headers);
     }
 
     public function exportAnalyticsReport()
     {
-        /*
-    |--------------------------------------------------------------------------
-    | DSS Monitoring Data
-    |--------------------------------------------------------------------------
-    */
+        $transactions     = TransactionRequest::all();
+        $totalPredictions = $transactions->count();
+        $approved         = $transactions->where('status', 'approved')->count();
+        $rejected         = $transactions->where('status', 'rejected')->count();
+        $avgConfidence    = round($transactions->avg('confidence'), 1);
 
-        $transactions = TransactionRequest::all();
-
-        $totalPredictions =
-            $transactions->count();
-
-        $approved =
-            $transactions->where(
-                'status',
-                'approved'
-            )->count();
-
-        $rejected =
-            $transactions->where(
-                'status',
-                'rejected'
-            )->count();
-
-        $avgConfidence = round(
-
-            $transactions->avg(
-                'confidence'
-            ),
-
-            1
-        );
-
-        $filename =
-            'dss-monitoring-report-'
-            . now()->format('Ymd_His')
-            . '.csv';
-
-        $headers = [
-
-            'Content-Type' =>
-            'text/csv',
-
-            'Content-Disposition' =>
-            "attachment; filename={$filename}",
+        $filename = 'dss-monitoring-report-' . now()->format('Ymd_His') . '.csv';
+        $headers  = [
+            'Content-Type'        => 'text/csv',
+            'Content-Disposition' => "attachment; filename={$filename}",
         ];
 
-        $callback = function () use (
-
-            $totalPredictions,
-            $approved,
-            $rejected,
-            $avgConfidence
-
-        ) {
-
-            $file = fopen(
-                'php://output',
-                'w'
-            );
-
-            /*
-        |--------------------------------------------------------------------------
-        | Header
-        |--------------------------------------------------------------------------
-        */
-
-            fputcsv($file, [
-
-                'Metric',
-                'Value',
-            ]);
-
-            /*
-        |--------------------------------------------------------------------------
-        | Metrics
-        |--------------------------------------------------------------------------
-        */
-
-            fputcsv($file, [
-                'Prediction Volume',
-                $totalPredictions
-            ]);
-
-            fputcsv($file, [
-                'Approved Transactions',
-                $approved
-            ]);
-
-            fputcsv($file, [
-                'Rejected Transactions',
-                $rejected
-            ]);
-
-            fputcsv($file, [
-                'Average Confidence',
-                $avgConfidence . '%'
-            ]);
-
+        $callback = function () use ($totalPredictions, $approved, $rejected, $avgConfidence) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, ['Metric', 'Value']);
+            fputcsv($file, ['Prediction Volume',     $totalPredictions]);
+            fputcsv($file, ['Approved Transactions', $approved]);
+            fputcsv($file, ['Rejected Transactions', $rejected]);
+            fputcsv($file, ['Average Confidence',    $avgConfidence . '%']);
             fclose($file);
         };
 
-        return response()
-
-            ->stream(
-                $callback,
-                200,
-                $headers
-            );
+        return response()->stream($callback, 200, $headers);
     }
 
-    private function getIntelligenceFeed($role)
+    // ── Intelligence Feed ─────────────────────────────────────
+    private function getIntelligenceFeed(string $role): \Illuminate\Support\Collection
     {
         $query = TransactionRequest::latest();
 
-        /*
-    |--------------------------------------------------------------------------
-    | Contextual Feed by Role
-    |--------------------------------------------------------------------------
-    */
 
-        switch ($role) {
+        match ($role) {
+            'procurement-director' => $query->where('request_type', 'procurement'),
+            'logistics-officer'    => $query->where('request_type', 'shipment'),
+            'key-account-manager'  => $query->where('request_type', 'contract'),
+            default                => null, // financial-controller sees all
+        };
 
-            case 'procurement-director':
+        return $query->take(5)->get()->map(function ($item) {
+            $statusLabel = $item->status === 'approved' ? 'disetujui' : 'ditolak';
+            $prediction  = $item->prediction ? " Prediksi DSS: {$item->prediction}." : '';
+            $confidence  = $item->confidence ? " Confidence: {$item->confidence}%." : '';
 
-                $query->where(
-                    'request_type',
-                    'procurement'
-                );
-
-                break;
-
-            case 'logistics-officer':
-
-                $query->where(
-                    'request_type',
-                    'shipment'
-                );
-
-                break;
-
-            case 'key-account-manager':
-
-                $query->where(
-                    'request_type',
-                    'contract'
-                );
-
-                break;
-
-            case 'financial-controller':
-
-                /*
-            |--------------------------------------------------------------------------
-            | Finance sees all
-            |--------------------------------------------------------------------------
-            */
-
-                break;
-        }
-
-        return $query
-
-            ->take(5)
-
-            ->get()
-
-            ->map(function ($item) {
-
-                return [
-
-                    'title' =>
-                    $item->title,
-
-                    'status' =>
-                    $item->status,
-
-                    'created_at' =>
-                    $item->created_at,
-
-                    'message' =>
-
-                    ucfirst($item->request_type)
-
-                        . ' '
-
-                        . $item->ship_mode
-
-                        . ' '
-
-                        . (
-                            $item->status === 'approved'
-                            ? 'approved'
-                            : 'ditolak'
-                        )
-
-                        . '. Prediksi profit '
-                ];
-            });
+            return [
+                'title'      => $item->title,
+                'status'     => $item->status,
+                'created_at' => $item->created_at,
+                'message'    => ucfirst($item->request_type) . " request via {$item->ship_mode} telah {$statusLabel}.{$prediction}{$confidence}",
+            ];
+        });
     }
 }
