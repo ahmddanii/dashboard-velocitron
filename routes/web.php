@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -80,6 +81,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/test-toast', function () {
         return redirect()->route('dashboard')
             ->with('success', 'Toast test berhasil muncul!');
+    });
+    Route::middleware(['role:head-analytics'])->group(function () {
+        Route::get('/users',          [UserController::class, 'index'])->name('users.index');
+        Route::get('/users/create',   [UserController::class, 'create'])->name('users.create');
+        Route::post('/users',         [UserController::class, 'store'])->name('users.store');
+        Route::delete('/users/{id}',  [UserController::class, 'destroy'])->name('users.destroy');
     });
 });
 
