@@ -1275,6 +1275,41 @@ class DashboardController extends Controller
         return view('requests.review', compact('requestData', 'result'));
     }
 
+    public function apiReviewRequest($id)
+    {
+        $requestData = TransactionRequest::findOrFail($id);
+        $result = null;
+
+        try {
+            $response = Http::timeout(10)->post("{$this->api}/predict-profit", [
+                'sales'         => (float) $requestData->sales,
+                'quantity'      => (int)   $requestData->quantity,
+                'discount'      => (float) $requestData->discount,
+                'shipping_days' => (int)   $requestData->shipping_days,
+                'category'      => $requestData->category,
+                'segment'       => $requestData->segment,
+                'region'        => $requestData->region,
+                'ship_mode'     => $requestData->ship_mode,
+            ]);
+
+            $result = $response->json();
+        } catch (\Exception $e) {
+            \Log::error('DSS API Review Error: ' . $e->getMessage());
+        }
+
+        if ($result) {
+            $requestData->update([
+                'prediction' => $result['label_id'] ?? null,
+                'confidence' => $result['prob_profitable'] ?? null,
+            ]);
+        }
+
+        return response()->json([
+            'request' => $requestData->load('requester'),
+            'result' => $result
+        ]);
+    }
+
     public function approveRequest($id)
     {
         $requestData = TransactionRequest::findOrFail($id);

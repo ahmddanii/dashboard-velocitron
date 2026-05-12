@@ -97,7 +97,9 @@
                                     <th class="text-left px-5 py-3 text-xs font-bold uppercase tracking-wider text-on-surface-variant">Decision</th>
                                     <th class="text-left px-5 py-3 text-xs font-bold uppercase tracking-wider text-on-surface-variant">Approved By</th>
                                     <th class="text-left px-5 py-3 text-xs font-bold uppercase tracking-wider text-on-surface-variant">Date</th>
-                                    <th class="text-center px-5 py-3 text-xs font-bold uppercase tracking-wider text-on-surface-variant">Action</th>
+                                    @unless(auth()->user()->hasAnyRole(['financial-controller', 'head-analytics']))
+                                        <th class="text-center px-5 py-3 text-xs font-bold uppercase tracking-wider text-on-surface-variant">Action</th>
+                                    @endunless
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-outline-variant">
@@ -135,46 +137,48 @@
                                         <td class="px-5 py-4 text-sm text-on-surface-variant">
                                             {{ optional($trx->created_at)->format('d M Y H:i') }}
                                         </td>
-                                        <td class="px-5 py-4 text-center">
-                                            @if($trx->status === 'pending' && $trx->requester_id === auth()->id())
-                                                <div class="flex items-center justify-center gap-2">
-                                                    <button type="button" 
-                                                        @click="
-                                                            editData = {
-                                                                id: '{{ $trx->id }}',
-                                                                title: '{{ addslashes($trx->title) }}',
-                                                                description: '{{ addslashes($trx->description) }}',
-                                                                sales: {{ $trx->sales }},
-                                                                quantity: {{ $trx->quantity }},
-                                                                discount: {{ $trx->discount }},
-                                                                shipping_days: {{ $trx->shipping_days }},
-                                                                category: '{{ $trx->category }}',
-                                                                segment: '{{ $trx->segment }}',
-                                                                region: '{{ $trx->region }}',
-                                                                ship_mode: '{{ $trx->ship_mode }}',
-                                                                updateUrl: '{{ route('requests.update', $trx->id) }}'
-                                                            };
-                                                            $dispatch('open-modal', 'edit-request-modal')
-                                                        "
-                                                        class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 text-xs font-bold hover:bg-blue-100 transition">
-                                                        <span class="material-symbols-outlined text-sm">edit</span>
-                                                        Edit
-                                                    </button>
-                                                    <button type="button" 
-                                                        @click="$dispatch('set-cancel-url', '{{ route('requests.cancel', $trx->id) }}'); $dispatch('open-modal', 'confirm-request-cancellation')"
-                                                        class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-bold hover:bg-red-100 transition">
-                                                        <span class="material-symbols-outlined text-sm">close</span>
-                                                        Cancel
-                                                    </button>
-                                                </div>
-                                            @else
-                                                <span class="text-slate-400 text-xs">-</span>
-                                            @endif
-                                        </td>
+                                        @unless(auth()->user()->hasAnyRole(['financial-controller', 'head-analytics']))
+                                            <td class="px-5 py-4 text-center">
+                                                @if($trx->status === 'pending' && $trx->requester_id === auth()->id())
+                                                    <div class="flex items-center justify-center gap-2">
+                                                        <button type="button" 
+                                                            @click="
+                                                                editData = {
+                                                                    id: '{{ $trx->id }}',
+                                                                    title: '{{ addslashes($trx->title) }}',
+                                                                    description: '{{ addslashes($trx->description) }}',
+                                                                    sales: {{ $trx->sales }},
+                                                                    quantity: {{ $trx->quantity }},
+                                                                    discount: {{ $trx->discount }},
+                                                                    shipping_days: {{ $trx->shipping_days }},
+                                                                    category: '{{ $trx->category }}',
+                                                                    segment: '{{ $trx->segment }}',
+                                                                    region: '{{ $trx->region }}',
+                                                                    ship_mode: '{{ $trx->ship_mode }}',
+                                                                    updateUrl: '{{ route('requests.update', $trx->id) }}'
+                                                                };
+                                                                $dispatch('open-modal', 'edit-request-modal')
+                                                            "
+                                                            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 text-xs font-bold hover:bg-blue-100 transition">
+                                                            <span class="material-symbols-outlined text-sm">edit</span>
+                                                            Edit
+                                                        </button>
+                                                        <button type="button" 
+                                                            @click="$dispatch('set-cancel-url', '{{ route('requests.cancel', $trx->id) }}'); $dispatch('open-modal', 'confirm-request-cancellation')"
+                                                            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-bold hover:bg-red-100 transition">
+                                                            <span class="material-symbols-outlined text-sm">close</span>
+                                                            Cancel
+                                                        </button>
+                                                    </div>
+                                                @else
+                                                    <span class="text-slate-400 text-xs">-</span>
+                                                @endif
+                                            </td>
+                                        @endunless
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="8" class="py-12 text-center text-on-surface-variant">
+                                        <td colspan="{{ auth()->user()->hasAnyRole(['financial-controller', 'head-analytics']) ? 7 : 8 }}" class="py-12 text-center text-on-surface-variant">
                                             <span class="material-symbols-outlined text-4xl block mb-2 opacity-30">rule</span>
                                             Belum ada histori transaksi DSS.
                                         </td>
@@ -184,8 +188,8 @@
                         </table>
                     </div>
                     @if($transactions->hasPages())
-                        <div class="p-4 border-t border-outline-variant">
-                            {{ $transactions->links() }}
+                        <div class="px-6 py-5 bg-surface-container-low border-t border-outline-variant">
+                            {{ $transactions->links('vendor.pagination.premium') }}
                         </div>
                     @endif
                 </x-ui.card>
@@ -300,22 +304,43 @@
 
                     {{-- Manual pagination untuk data dari Flask --}}
                     @if($historicalLastPage > 1)
-                        <div class="p-4 border-t border-outline-variant flex items-center justify-between">
-                            <p class="text-xs text-on-surface-variant">
-                                Halaman {{ $historicalPage }} dari {{ $historicalLastPage }}
-                            </p>
-                            <div class="flex gap-2">
+                        <div class="px-6 py-5 bg-surface-container-low border-t border-outline-variant flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div class="flex items-center gap-3">
+                                <div class="px-3 py-1 rounded-full bg-secondary/10 text-secondary text-[10px] font-black uppercase tracking-widest">
+                                    Page {{ $historicalPage }} of {{ $historicalLastPage }}
+                                </div>
+                                <p class="text-xs text-on-surface-variant font-medium">
+                                    Showing {{ count($historicalOrders) }} of {{ number_format($historicalTotal) }} records
+                                </p>
+                            </div>
+                            
+                            <div class="flex items-center gap-2">
                                 @if($historicalPage > 1)
                                     <a href="{{ request()->fullUrlWithQuery(['historical_page' => $historicalPage - 1, 'tab' => 'historical']) }}"
-                                        class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-outline-variant hover:bg-surface-container transition">
-                                        ← Prev
+                                        class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl border border-outline-variant bg-white text-on-surface hover:bg-surface-container transition-all active:scale-95 shadow-sm">
+                                        <span class="material-symbols-outlined text-sm">chevron_left</span>
+                                        Previous
                                     </a>
+                                @else
+                                    <div class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl border border-outline-variant bg-slate-50 text-slate-300 cursor-not-allowed">
+                                        <span class="material-symbols-outlined text-sm">chevron_left</span>
+                                        Previous
+                                    </div>
                                 @endif
+
+                                <div class="h-8 w-[1px] bg-outline-variant mx-1"></div>
+
                                 @if($historicalPage < $historicalLastPage)
                                     <a href="{{ request()->fullUrlWithQuery(['historical_page' => $historicalPage + 1, 'tab' => 'historical']) }}"
-                                        class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-outline-variant hover:bg-surface-container transition">
-                                        Next →
+                                        class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-secondary text-white hover:bg-secondary/90 transition-all active:scale-95 shadow-lg shadow-secondary/20">
+                                        Next
+                                        <span class="material-symbols-outlined text-sm">chevron_right</span>
                                     </a>
+                                @else
+                                    <div class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-slate-200 text-slate-400 cursor-not-allowed">
+                                        Next
+                                        <span class="material-symbols-outlined text-sm">chevron_right</span>
+                                    </div>
                                 @endif
                             </div>
                         </div>

@@ -1,42 +1,43 @@
-@include('dashboard.partials.dss-analytics')
-@include('dashboard.partials.dss-trend-chart')
-@include('dashboard.partials.executive-insights')
+{{-- ══════════════════════════════════════════════════════════
+    FINANCIAL CONTROLLER DASHBOARD
+    Urutan: Charts (side by side) → DSS Analytics → Trend → Insights → CTA
+══════════════════════════════════════════════════════════ --}}
 
+{{-- Baris 1: Profit per Kategori + Profit & Sales per Region --}}
 <div class="dashboard-grid">
 
     <x-ui.card class="col-span-12 md:col-span-6 overflow-hidden">
-
         <div class="dashboard-card-header">
-            <h3 class="dashboard-title">
-                Profit per Kategori
-            </h3>
+            <h3 class="dashboard-title">Profit per Kategori</h3>
+            <p class="dashboard-subtitle">Perbandingan sales & profit tiap kategori produk.</p>
         </div>
-
-        <div class="dashboard-card-body h-64">
+        <div class="dashboard-card-body h-72">
             <canvas id="categoryChart"></canvas>
         </div>
-
     </x-ui.card>
 
     <x-ui.card class="col-span-12 md:col-span-6 overflow-hidden">
-
         <div class="dashboard-card-header">
-            <h3 class="dashboard-title">
-                Profit & Sales per Region
-            </h3>
+            <h3 class="dashboard-title">Profit & Sales per Region</h3>
+            <p class="dashboard-subtitle">Distribusi pendapatan di setiap region penjualan.</p>
         </div>
-
-        <div class="dashboard-card-body h-64">
+        <div class="dashboard-card-body h-72">
             <canvas id="regionChart"></canvas>
         </div>
-
     </x-ui.card>
 
 </div>
 
-<div class="dashboard-grid">
+{{-- Baris 2: DSS Analytics + DSS Trend --}}
+@include('dashboard.partials.dss-analytics')
+@include('dashboard.partials.dss-trend-chart')
 
-    <x-ui.card class="col-span-12 md:col-span-12 overflow-hidden bg-primary-container border-0 relative">
+{{-- Baris 3: Executive Insights --}}
+@include('dashboard.partials.executive-insights')
+
+{{-- Baris 4: DSS Approval CTA --}}
+<div class="dashboard-grid">
+    <x-ui.card class="col-span-12 overflow-hidden bg-primary-container border-0 relative">
         <div class="absolute -right-6 -bottom-6 opacity-10">
             <span class="material-symbols-outlined material-icon-fill text-white" style="font-size:120px">gavel</span>
         </div>
@@ -56,5 +57,4 @@
             </a>
         </div>
     </x-ui.card>
-
 </div>

@@ -20,31 +20,38 @@ HEAD OF DATA ANALYTICS
     </div>
 
     {{-- ══════════════════════════════════════════════════════
-    FINANCIAL CONTROLLER — dipecah 2 baris biar tidak sesak
+    FINANCIAL CONTROLLER — 2 baris × 4 kolom, metric lengkap
     ══════════════════════════════════════════════════════ --}}
 @elseif($role === 'financial-controller')
 
-    {{-- Baris 1: 3 metric keuangan utama --}}
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+    {{-- Baris 1: Core Financials --}}
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
 
         <x-ui.kpi-card label="Total Profit" value="${{ number_format($summary['total_profit'] ?? 0, 0) }}"
             icon="account_balance" color="green" sub="Keuntungan bersih" />
-        <x-ui.kpi-card label="Approval Rate" value="{{ $dssAnalytics['approval_rate'] ?? 0 }}%" icon="check_circle"
-            color="green" :trend="($dssAnalytics['approval_rate'] ?? 0) >= 50 ? 'up' : 'down'"
-            :trendVal="($dssAnalytics['approval_rate'] ?? 0) >= 50 ? 'Di atas threshold' : 'Di bawah threshold'" />
-        <x-ui.kpi-card label="Rejection Rate" value="{{ $dssAnalytics['rejection_rate'] ?? 0 }}%" icon="cancel" color="red"
-            :trend="($dssAnalytics['rejection_rate'] ?? 0) >= 50 ? 'down' : 'up'" :trendVal="($dssAnalytics['rejection_rate'] ?? 0) >= 50 ? 'Risiko tinggi' : 'Terkendali'" />
+        <x-ui.kpi-card label="Total Sales" value="${{ number_format($summary['total_sales'] ?? 0, 0) }}"
+            icon="payments" color="blue" sub="Revenue keseluruhan" />
+        <x-ui.kpi-card label="Total Requests" value="{{ $dssAnalytics['total_predictions'] ?? 0 }}"
+            icon="analytics" color="purple" sub="Volume transaksi DSS" />
+        <x-ui.kpi-card label="Avg Profit Margin" value="{{ $summary['avg_profit_pct'] ?? 0 }}%"
+            icon="percent" color="emerald" sub="Margin keseluruhan" />
 
     </div>
 
-    {{-- Baris 2: 2 DSS metric --}}
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+    {{-- Baris 2: DSS & Risk Metrics --}}
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
 
-        <x-ui.kpi-card label="Avg DSS Confidence" value="{{ $dssAnalytics['avg_confidence'] ?? 0 }}%" icon="verified"
-            color="purple" :trend="($dssAnalytics['avg_confidence'] ?? 0) >= 75 ? 'up' : 'neutral'"
-            trendVal="DSS confidence" />
+        <x-ui.kpi-card label="Approval Rate" value="{{ $dssAnalytics['approval_rate'] ?? 0 }}%" icon="check_circle"
+            color="green" :trend="($dssAnalytics['approval_rate'] ?? 0) >= 50 ? 'up' : 'down'"
+            :trendVal="($dssAnalytics['approval_rate'] ?? 0) >= 50 ? 'Stabil' : 'Menurun'" />
+        <x-ui.kpi-card label="Rejection Rate" value="{{ $dssAnalytics['rejection_rate'] ?? 0 }}%" icon="cancel" color="red"
+            :trend="($dssAnalytics['rejection_rate'] ?? 0) >= 30 ? 'down' : 'up'" :trendVal="($dssAnalytics['rejection_rate'] ?? 0) >= 30 ? 'Risiko tinggi' : 'Terkendali'" />
+        <x-ui.kpi-card label="Avg Discount" value="{{ $summary['avg_discount'] ?? 0 }}%"
+            icon="sell" color="orange"
+            :trend="($summary['avg_discount'] ?? 0) >= 20 ? 'down' : 'up'"
+            :trendVal="($summary['avg_discount'] ?? 0) >= 20 ? 'Tinggi' : 'Normal'" />
         <x-ui.kpi-card label="Most Risky Category" value="{{ $dssAnalytics['risky_category'] ?? '-' }}" icon="warning"
-            color="orange" sub="Rejection tertinggi" />
+            color="amber" sub="Rejection tertinggi" />
 
     </div>
 

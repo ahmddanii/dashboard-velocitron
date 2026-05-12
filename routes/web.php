@@ -65,6 +65,11 @@ Route::middleware(['auth'])->group(function () {
         [DashboardController::class, 'reviewRequest']
     )->name('requests.review');
 
+    Route::get(
+        '/requests/{id}/api-review',
+        [DashboardController::class, 'apiReviewRequest']
+    )->name('requests.api-review');
+
     Route::post(
         '/requests/{id}/approve',
         [DashboardController::class, 'approveRequest']
