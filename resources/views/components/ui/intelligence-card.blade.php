@@ -9,21 +9,21 @@
 
 @php
 $iconPalette = [
-    'blue'   => ['bg' => 'bg-blue-100',   'text' => 'text-blue-600'],
-    'green'  => ['bg' => 'bg-green-100',  'text' => 'text-green-600'],
-    'cyan'   => ['bg' => 'bg-cyan-100',   'text' => 'text-cyan-600'],
-    'orange' => ['bg' => 'bg-orange-100', 'text' => 'text-orange-600'],
-    'purple' => ['bg' => 'bg-purple-100', 'text' => 'text-purple-600'],
-    'amber'  => ['bg' => 'bg-amber-100',  'text' => 'text-amber-600'],
+    'blue'   => ['bg' => 'bg-blue-100 dark:bg-blue-500/10',   'text' => 'text-blue-600 dark:text-blue-400'],
+    'green'  => ['bg' => 'bg-green-100 dark:bg-green-500/10',  'text' => 'text-green-600 dark:text-green-400'],
+    'cyan'   => ['bg' => 'bg-cyan-100 dark:bg-cyan-500/10',   'text' => 'text-cyan-600 dark:text-cyan-400'],
+    'orange' => ['bg' => 'bg-orange-100 dark:bg-orange-500/10', 'text' => 'text-orange-600 dark:text-orange-400'],
+    'purple' => ['bg' => 'bg-purple-100 dark:bg-purple-500/10', 'text' => 'text-purple-600 dark:text-purple-400'],
+    'amber'  => ['bg' => 'bg-amber-100 dark:bg-amber-500/10',  'text' => 'text-amber-600 dark:text-amber-400'],
 ];
 $ip = $iconPalette[$color] ?? $iconPalette['blue'];
 
 $statPalette = [
-    'green' => ['bg' => 'bg-green-50', 'border' => 'border-green-100', 'label' => 'text-green-700', 'value' => 'text-green-900', 'bar' => 'bg-green-400'],
-    'red'   => ['bg' => 'bg-red-50',   'border' => 'border-red-100',   'label' => 'text-red-700',   'value' => 'text-red-900',   'bar' => 'bg-red-400'],
-    'blue'  => ['bg' => 'bg-blue-50',  'border' => 'border-blue-100',  'label' => 'text-blue-700',  'value' => 'text-blue-900',  'bar' => 'bg-blue-400'],
-    'cyan'  => ['bg' => 'bg-cyan-50',  'border' => 'border-cyan-100',  'label' => 'text-cyan-700',  'value' => 'text-cyan-900',  'bar' => 'bg-cyan-400'],
-    'amber' => ['bg' => 'bg-amber-50', 'border' => 'border-amber-100', 'label' => 'text-amber-700', 'value' => 'text-amber-900', 'bar' => 'bg-amber-400'],
+    'green' => ['bg' => 'bg-green-50 dark:bg-green-500/10', 'border' => 'border-green-100 dark:border-green-500/20', 'label' => 'text-green-700 dark:text-green-400', 'value' => 'text-green-900 dark:text-green-50', 'bar' => 'bg-green-400'],
+    'red'   => ['bg' => 'bg-red-50 dark:bg-red-500/10',   'border' => 'border-red-100 dark:border-red-500/20',   'label' => 'text-red-700 dark:text-red-400',   'value' => 'text-red-900 dark:text-red-50',   'bar' => 'bg-red-400'],
+    'blue'  => ['bg' => 'bg-blue-50 dark:bg-blue-500/10',  'border' => 'border-blue-100 dark:border-blue-500/20',  'label' => 'text-blue-700 dark:text-blue-400',  'value' => 'text-blue-900 dark:text-blue-50',  'bar' => 'bg-blue-400'],
+    'cyan'  => ['bg' => 'bg-cyan-50 dark:bg-cyan-500/10',  'border' => 'border-cyan-100 dark:border-cyan-500/20',  'label' => 'text-cyan-700 dark:text-cyan-400',  'value' => 'text-cyan-900 dark:text-cyan-50',  'bar' => 'bg-cyan-400'],
+    'amber' => ['bg' => 'bg-amber-50 dark:bg-amber-500/10', 'border' => 'border-amber-100 dark:border-amber-500/20', 'label' => 'text-amber-700 dark:text-amber-400', 'value' => 'text-amber-900 dark:text-amber-50', 'bar' => 'bg-amber-400'],
 ];
 @endphp
 

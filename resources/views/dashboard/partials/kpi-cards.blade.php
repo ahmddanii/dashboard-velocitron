@@ -84,10 +84,10 @@ HEAD OF DATA ANALYTICS
         <x-ui.kpi-card label="Procurement Approval Rate" value="{{ $procurementAnalytics['approval_rate'] ?? 0 }}%"
             icon="inventory_2" color="green" :trend="($procurementAnalytics['approval_rate'] ?? 0) >= 50 ? 'up' : 'down'"
             :trendVal="($procurementAnalytics['approval_rate'] ?? 0) >= 50 ? 'Supply aman' : 'Perlu evaluasi'" />
+        <x-ui.kpi-card label="Avg. DSS Confidence" value="{{ $procurementAnalytics['avg_confidence'] ?? 0 }}%"
+            icon="psychology" color="amber" sub="Prediction reliability" />
         <x-ui.kpi-card label="Most Rejected Category" value="{{ $procurementAnalytics['risky_category'] ?? '-' }}"
             icon="warning" color="red" sub="Prioritas review" />
-        <x-ui.kpi-card label="Avg Profit Margin" value="{{ $summary['avg_profit_pct'] ?? 0 }}%" icon="percent"
-            color="purple" sub="Target margin" />
 
     </div>
 

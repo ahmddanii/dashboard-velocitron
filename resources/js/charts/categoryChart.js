@@ -21,8 +21,14 @@ export function initCategoryChart(categoryData) {
                     data: categoryData.map((item) => item.total_sales),
 
                     backgroundColor: COLORS.blueLt,
-
-                    borderRadius: 4,
+                    borderRadius: {
+                        topLeft: 8,
+                        topRight: 8,
+                        bottomLeft: 0,
+                        bottomRight: 0
+                    },
+                    borderSkipped: false,
+                    maxBarThickness: 40,
                 },
 
                 {
@@ -31,8 +37,14 @@ export function initCategoryChart(categoryData) {
                     data: categoryData.map((item) => item.total_profit),
 
                     backgroundColor: COLORS.greenLt,
-
-                    borderRadius: 4,
+                    borderRadius: {
+                        topLeft: 8,
+                        topRight: 8,
+                        bottomLeft: 0,
+                        bottomRight: 0
+                    },
+                    borderSkipped: false,
+                    maxBarThickness: 40,
                 },
             ],
         },
@@ -43,16 +55,27 @@ export function initCategoryChart(categoryData) {
             plugins: {
                 legend: {
                     position: "bottom",
-
                     labels: {
+                        usePointStyle: true,
+                        pointStyle: 'circle',
                         font: {
-                            size: 10,
+                            family: 'Inter',
+                            size: 11,
+                            weight: '600'
                         },
-
-                        boxWidth: 10,
-                        padding: 10,
+                        boxWidth: 8,
+                        padding: 20,
+                        color: 'rgba(148, 163, 184, 0.8)'
                     },
                 },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    titleFont: { family: 'Inter', size: 13, weight: 'bold' },
+                    bodyFont: { family: 'Inter', size: 12 },
+                    padding: 12,
+                    cornerRadius: 12,
+                    displayColors: true
+                }
             },
 
             scales: {
@@ -60,25 +83,32 @@ export function initCategoryChart(categoryData) {
                     grid: {
                         display: false,
                     },
-
                     ticks: {
+                        color: 'rgba(148, 163, 184, 0.7)',
                         font: {
-                            size: 10,
+                            family: 'Inter',
+                            size: 11,
+                            weight: '500'
                         },
                     },
                 },
 
                 y: {
                     grid: {
-                        color: "#f1f5f9",
+                        color: 'rgba(148, 163, 184, 0.1)',
+                        drawBorder: false,
                     },
-
+                    border: {
+                        display: false
+                    },
                     ticks: {
+                        color: 'rgba(148, 163, 184, 0.7)',
                         font: {
-                            size: 10,
+                            family: 'Inter',
+                            size: 11,
                         },
-
                         callback: (v) => "$" + (v / 1000).toFixed(0) + "K",
+                        padding: 10
                     },
                 },
             },

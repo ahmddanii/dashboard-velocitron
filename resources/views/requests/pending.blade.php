@@ -203,7 +203,7 @@
              style="display: none;">
             
             <div @click.away="showReviewModal = false" 
-                 class="bg-surface rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+                 class="bg-surface text-on-surface rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
                  x-transition:enter="transition ease-out duration-300"
                  x-transition:enter-start="opacity-0 scale-95"
                  x-transition:enter-end="opacity-100 scale-100">
@@ -265,7 +265,7 @@
                                 <p class="mt-1 text-sm text-on-surface-variant" x-text="requestData?.description"></p>
                             </div>
 
-                            <div class="grid grid-cols-3 gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                            <div class="grid grid-cols-3 gap-4 p-4 bg-surface-container-low rounded-2xl border border-outline-variant">
                                 <div>
                                     <p class="text-[10px] text-on-surface-variant uppercase font-bold">Sales</p>
                                     <p class="font-black text-lg text-primary" x-text="'$' + Number(requestData?.sales).toLocaleString()"></p>
@@ -299,16 +299,16 @@
                             <template x-if="dssResult">
                                 <div class="space-y-6">
                                     <div class="rounded-3xl p-6 border transition-all duration-500" 
-                                         :class="dssResult.prediction == 1 ? 'border-green-200 bg-green-50/50' : 'border-red-200 bg-red-50/50'">
+                                         :class="dssResult.prediction == 1 ? 'border-green-200/50 dark:border-green-500/20 bg-green-50/40 dark:bg-green-950/20' : 'border-red-200/50 dark:border-red-500/20 bg-red-50/40 dark:bg-red-950/20'">
                                         
                                         <div class="flex items-center gap-4 mb-6">
                                             <div class="w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg"
-                                                 :class="dssResult.prediction == 1 ? 'bg-green-600 text-white shadow-green-200' : 'bg-red-600 text-white shadow-red-200'">
+                                                 :class="dssResult.prediction == 1 ? 'bg-green-600 text-white shadow-green-500/20 dark:shadow-none' : 'bg-red-600 text-white shadow-red-500/20 dark:shadow-none'">
                                                 <span class="material-symbols-outlined text-3xl" x-text="dssResult.prediction == 1 ? 'verified' : 'report'"></span>
                                             </div>
                                             <div>
-                                                <p class="text-[10px] uppercase tracking-widest font-black" :class="dssResult.prediction == 1 ? 'text-green-600' : 'text-red-600'">Intelligence Prediction</p>
-                                                <p class="text-3xl font-black tracking-tighter" :class="dssResult.prediction == 1 ? 'text-green-800' : 'text-red-800'" x-text="dssResult.label_id"></p>
+                                                <p class="text-[10px] uppercase tracking-widest font-black" :class="dssResult.prediction == 1 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">Intelligence Prediction</p>
+                                                <p class="text-3xl font-black tracking-tighter" :class="dssResult.prediction == 1 ? 'text-green-800 dark:text-green-300' : 'text-red-800 dark:text-red-300'" x-text="dssResult.label_id"></p>
                                             </div>
                                         </div>
 
@@ -316,10 +316,10 @@
                                             {{-- Profit Prob --}}
                                             <div>
                                                 <div class="flex justify-between text-xs font-bold mb-2">
-                                                    <span class="text-green-700 uppercase tracking-wider">Profit Probability</span>
-                                                    <span class="text-green-700 text-sm" x-text="dssResult.prob_profitable + '%'"></span>
+                                                    <span class="text-green-700 dark:text-green-400 uppercase tracking-wider">Profit Probability</span>
+                                                    <span class="text-green-700 dark:text-green-400 text-sm" x-text="dssResult.prob_profitable + '%'"></span>
                                                 </div>
-                                                <div class="h-3 bg-white rounded-full overflow-hidden border border-green-100">
+                                                <div class="h-3 bg-green-100/50 dark:bg-green-950/40 rounded-full overflow-hidden border border-green-200/30 dark:border-green-800/30">
                                                     <div class="h-full bg-green-500 rounded-full transition-all duration-1000" :style="'width: ' + dssResult.prob_profitable + '%'"></div>
                                                 </div>
                                             </div>
@@ -327,19 +327,19 @@
                                             {{-- Loss Prob --}}
                                             <div>
                                                 <div class="flex justify-between text-xs font-bold mb-2">
-                                                    <span class="text-red-600 uppercase tracking-wider">Loss Probability</span>
-                                                    <span class="text-red-600 text-sm" x-text="dssResult.prob_loss + '%'"></span>
+                                                    <span class="text-red-600 dark:text-red-400 uppercase tracking-wider">Loss Probability</span>
+                                                    <span class="text-red-600 dark:text-red-400 text-sm" x-text="dssResult.prob_loss + '%'"></span>
                                                 </div>
-                                                <div class="h-3 bg-white rounded-full overflow-hidden border border-red-100">
+                                                <div class="h-3 bg-red-100/50 dark:bg-red-950/40 rounded-full overflow-hidden border border-red-200/30 dark:border-red-800/30">
                                                     <div class="h-full bg-red-500 rounded-full transition-all duration-1000" :style="'width: ' + dssResult.prob_loss + '%'"></div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div class="p-4 rounded-2xl bg-blue-50 border border-blue-100 flex gap-3">
-                                        <span class="material-symbols-outlined text-blue-500">info</span>
-                                        <p class="text-xs text-blue-700 leading-relaxed font-medium">
+                                    <div class="p-4 rounded-2xl bg-blue-50/50 dark:bg-blue-950/30 border border-blue-100/50 dark:border-blue-800/30 flex gap-3">
+                                        <span class="material-symbols-outlined text-blue-500 dark:text-blue-400">info</span>
+                                        <p class="text-xs text-blue-700 dark:text-blue-300 leading-relaxed font-medium">
                                             DSS merekomendasikan untuk <strong x-text="dssResult.prediction == 1 ? 'SETUJU' : 'TOLAK'"></strong> transaksi ini berdasarkan data historis profitabilitas.
                                         </p>
                                     </div>
@@ -347,10 +347,10 @@
                             </template>
 
                             <template x-if="!dssResult">
-                                <div class="rounded-2xl p-6 bg-red-50 border border-red-200 text-center">
+                                <div class="rounded-2xl p-6 bg-red-50/50 dark:bg-red-950/30 border border-red-200/50 dark:border-red-800/30 text-center">
                                     <span class="material-symbols-outlined text-red-500 text-4xl mb-2">error</span>
-                                    <p class="text-red-700 font-bold">API Offline</p>
-                                    <p class="text-red-600 text-xs mt-1">Gagal menghubungi engine DSS untuk analisis otomatis.</p>
+                                    <p class="text-red-700 dark:text-red-300 font-bold">API Offline</p>
+                                    <p class="text-red-600 dark:text-red-400 text-xs mt-1">Gagal menghubungi engine DSS untuk analisis otomatis.</p>
                                 </div>
                             </template>
                         </div>
@@ -360,19 +360,19 @@
                 {{-- Footer Action --}}
                 <div class="px-8 py-6 bg-surface-container-low border-t border-outline-variant">
                     <div class="flex gap-4" x-show="!loading && requestData">
-                        <button @click="showReviewModal = false" class="px-6 py-3 rounded-2xl border border-outline-variant font-bold text-sm hover:bg-slate-50 transition-all">
+                        <button @click="showReviewModal = false" class="px-6 py-3 rounded-2xl border border-outline-variant text-on-surface font-bold text-sm hover:bg-surface-container-high transition-all">
                             Cancel
                         </button>
                         <div class="flex-1 flex gap-4 justify-end">
                             <form method="POST" :action="'/requests/' + requestData?.id + '/reject'" class="flex-1 max-w-[200px]">
                                 @csrf
-                                <button type="submit" class="w-full py-3 rounded-2xl bg-red-500 text-white font-bold text-sm hover:bg-red-600 transition-all shadow-lg shadow-red-200 active:scale-95">
+                                <button type="submit" class="w-full py-3 rounded-2xl bg-red-500 text-white font-bold text-sm hover:bg-red-600 transition-all shadow-lg shadow-red-200/50 dark:shadow-none active:scale-95">
                                     Reject
                                 </button>
                             </form>
                             <form method="POST" :action="'/requests/' + requestData?.id + '/approve'" class="flex-1 max-w-[200px]">
                                 @csrf
-                                <button type="submit" class="w-full py-3 rounded-2xl bg-green-600 text-white font-bold text-sm hover:bg-green-700 transition-all shadow-lg shadow-green-200 active:scale-95">
+                                <button type="submit" class="w-full py-3 rounded-2xl bg-green-600 text-white font-bold text-sm hover:bg-green-700 transition-all shadow-lg shadow-green-200/50 dark:shadow-none active:scale-95">
                                     Approve Transaction
                                 </button>
                             </form>

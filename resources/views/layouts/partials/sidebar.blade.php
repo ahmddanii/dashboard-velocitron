@@ -157,8 +157,38 @@
             </div>
         </div>
 
+        {{-- Theme Toggle --}}
+        <div class="px-2 pb-4 border-b border-slate-800" x-data="{ 
+            darkMode: document.documentElement.classList.contains('dark'),
+            toggle() {
+                this.darkMode = !this.darkMode;
+                if (this.darkMode) {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('theme', 'light');
+                }
+            }
+        }">
+            <button @click="toggle()" type="button" class="w-full flex items-center justify-between p-3 rounded-2xl bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 transition-all duration-300">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-700 text-amber-400" x-show="!darkMode">
+                        <span class="material-symbols-outlined text-lg">light_mode</span>
+                    </div>
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-700 text-blue-400" x-show="darkMode">
+                        <span class="material-symbols-outlined text-lg">dark_mode</span>
+                    </div>
+                    <span class="text-xs font-bold text-slate-300" x-text="darkMode ? 'Dark Mode' : 'Light Mode'"></span>
+                </div>
+                <div class="w-10 h-5 bg-slate-700 rounded-full relative transition-colors duration-300" :class="darkMode ? 'bg-blue-600' : 'bg-slate-600'">
+                    <div class="absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform duration-300" :class="darkMode ? 'translate-x-5' : ''"></div>
+                </div>
+            </button>
+        </div>
+
         {{-- Profile Section --}}
-        <div class="pt-4 border-t border-slate-800 pb-2">
+        <div class="pt-4 pb-2">
             <div class="group flex items-center gap-3 p-2 rounded-2xl hover:bg-slate-800/50 transition-all duration-300 cursor-pointer mb-2" 
                  onclick="window.location.href='{{ route('profile.edit') }}'">
                 <div class="relative">

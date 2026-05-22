@@ -1,7 +1,7 @@
 @php
     $messages = [
         'success' => session('success') ?? session('status'),
-        'error' => session('error'),
+        'error' => session('error') ?? ($errors->any() ? $errors->first() : null),
         'warning' => session('warning'),
         'info' => session('info'),
     ];

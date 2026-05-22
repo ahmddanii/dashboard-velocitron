@@ -4,7 +4,7 @@
 
 @section('content')
 
-    <div class="p-6">
+    <div class="p-6 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 rounded-xl shadow-xl">
 
         <div class="max-w-[1440px] mx-auto">
 
@@ -133,7 +133,7 @@
                                         Nama Lengkap
                                     </label>
                                     <input id="name" name="name" type="text"
-                                        class="w-full px-4 py-2.5 rounded-lg border border-outline-variant bg-white text-sm text-on-surface
+                                        class="w-full px-4 py-2.5 rounded-lg border border-outline-variant bg-surface-container-lowest text-sm text-on-surface
                                                focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all"
                                         value="{{ old('name', $user->name) }}" required autofocus />
 
@@ -147,7 +147,7 @@
                                         Email Address
                                     </label>
                                     <input id="email" name="email" type="email"
-                                        class="w-full px-4 py-2.5 rounded-lg border border-outline-variant bg-white text-sm text-on-surface
+                                        class="w-full px-4 py-2.5 rounded-lg border border-outline-variant bg-surface-container-lowest text-sm text-on-surface
                                                focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all"
                                         value="{{ old('email', $user->email) }}" required />
 
@@ -207,7 +207,7 @@
                                     <div x-data="{ show: false }" class="relative">
                                         <input id="update_password_current_password" name="current_password"
                                             :type="show ? 'text' : 'password'"
-                                            class="w-full px-4 py-2.5 pr-11 rounded-lg border border-outline-variant bg-white text-sm text-on-surface
+                                            class="w-full px-4 py-2.5 pr-11 rounded-lg border border-outline-variant bg-surface-container-lowest text-sm text-on-surface
                                                    focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all"
                                             autocomplete="current-password" />
                                         <button type="button" @click="show = !show" tabindex="-1"
@@ -231,7 +231,7 @@
                                         <div x-data="{ show: false }" class="relative">
                                             <input id="update_password_password" name="password"
                                                 :type="show ? 'text' : 'password'"
-                                                class="w-full px-4 py-2.5 pr-11 rounded-lg border border-outline-variant bg-white text-sm text-on-surface
+                                                class="w-full px-4 py-2.5 pr-11 rounded-lg border border-outline-variant bg-surface-container-lowest text-sm text-on-surface
                                                        focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all"
                                                 autocomplete="new-password" />
                                             <button type="button" @click="show = !show" tabindex="-1"
@@ -253,7 +253,7 @@
                                         <div x-data="{ show: false }" class="relative">
                                             <input id="update_password_password_confirmation" name="password_confirmation"
                                                 :type="show ? 'text' : 'password'"
-                                                class="w-full px-4 py-2.5 pr-11 rounded-lg border border-outline-variant bg-white text-sm text-on-surface
+                                                class="w-full px-4 py-2.5 pr-11 rounded-lg border border-outline-variant bg-surface-container-lowest text-sm text-on-surface
                                                        focus:border-secondary focus:ring-2 focus:ring-secondary/20 transition-all"
                                                 autocomplete="new-password" />
                                             <button type="button" @click="show = !show" tabindex="-1"
@@ -344,7 +344,7 @@
                                         <div x-data="{ show: false }" class="relative">
                                             <input id="password" name="password"
                                                 :type="show ? 'text' : 'password'"
-                                                class="w-full px-4 py-2.5 pr-11 rounded-lg border border-outline-variant bg-white text-sm text-on-surface
+                                                class="w-full px-4 py-2.5 pr-11 rounded-lg border border-outline-variant bg-surface-container-lowest text-sm text-on-surface
                                                        focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all"
                                                 placeholder="Masukkan password..." />
                                             <button type="button" @click="show = !show" tabindex="-1"

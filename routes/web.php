@@ -95,6 +95,30 @@ Route::middleware(['auth'])->group(function () {
             'exportTransactions'
         ]
     )->name('transactions.export');
+
+    Route::post(
+        '/transactions/import',
+        [
+            DashboardController::class,
+            'importTransactions'
+        ]
+    )->name('transactions.import');
+
+    Route::delete(
+        '/transactions/import/clear',
+        [
+            DashboardController::class,
+            'clearImportedTransactions'
+        ]
+    )->name('transactions.import.clear');
+
+    Route::get(
+        '/transactions/template',
+        [
+            DashboardController::class,
+            'downloadImportTemplate'
+        ]
+    )->name('transactions.template');
     Route::get(
         '/analytics/export',
         [
@@ -102,6 +126,10 @@ Route::middleware(['auth'])->group(function () {
             'exportAnalyticsReport'
         ]
     )->name('analytics.export');
+
+
+    Route::get('/admin/ajax-predict-imported', [App\Http\Controllers\DashboardController::class, 'ajaxPredictImported'])->name('admin.ajax-predict-imported');
+
     Route::get('/test-toast', function () {
         return redirect()->route('dashboard')
             ->with('success', 'Toast test berhasil muncul!');

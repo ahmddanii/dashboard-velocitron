@@ -10,17 +10,17 @@
 
 @php
 $palette = [
-    'blue'   => ['bg' => 'bg-blue-50',   'text' => 'text-blue-600',   'border' => 'border-blue-400',   'sub' => 'text-blue-500'],
-    'green'  => ['bg' => 'bg-green-50',  'text' => 'text-green-600',  'border' => 'border-green-400',  'sub' => 'text-green-600'],
-    'orange' => ['bg' => 'bg-orange-50', 'text' => 'text-orange-600', 'border' => 'border-orange-400', 'sub' => 'text-orange-500'],
-    'purple' => ['bg' => 'bg-purple-50', 'text' => 'text-purple-600', 'border' => 'border-purple-400', 'sub' => 'text-purple-500'],
-    'red'    => ['bg' => 'bg-red-50',    'text' => 'text-red-600',    'border' => 'border-red-400',    'sub' => 'text-red-500'],
-    'cyan'   => ['bg' => 'bg-cyan-50',   'text' => 'text-cyan-600',   'border' => 'border-cyan-400',   'sub' => 'text-cyan-500'],
+    'blue'   => ['bg' => 'bg-blue-50 dark:bg-blue-500/10',   'text' => 'text-blue-600 dark:text-blue-400',   'border' => 'border-blue-400',   'sub' => 'text-blue-500'],
+    'green'  => ['bg' => 'bg-green-50 dark:bg-green-500/10',  'text' => 'text-green-600 dark:text-green-400',  'border' => 'border-green-400',  'sub' => 'text-green-600'],
+    'orange' => ['bg' => 'bg-orange-50 dark:bg-orange-500/10', 'text' => 'text-orange-600 dark:text-orange-400', 'border' => 'border-orange-400', 'sub' => 'text-orange-500'],
+    'purple' => ['bg' => 'bg-purple-50 dark:bg-purple-500/10', 'text' => 'text-purple-600 dark:text-purple-400', 'border' => 'border-purple-400', 'sub' => 'text-purple-500'],
+    'red'    => ['bg' => 'bg-red-50 dark:bg-red-500/10',    'text' => 'text-red-600 dark:text-red-400',    'border' => 'border-red-400',    'sub' => 'text-red-500'],
+    'cyan'   => ['bg' => 'bg-cyan-50 dark:bg-cyan-500/10',   'text' => 'text-cyan-600 dark:text-cyan-400',   'border' => 'border-cyan-400',   'sub' => 'text-cyan-500'],
 ];
 $p = $palette[$color] ?? $palette['blue'];
 
 $trendIcon  = match($trend) { 'up' => 'trending_up', 'down' => 'trending_down', default => 'remove' };
-$trendColor = match($trend) { 'up' => 'text-green-600', 'down' => 'text-red-500', default => 'text-slate-400' };
+$trendColor = match($trend) { 'up' => 'text-green-600', 'down' => 'text-red-500', default => 'text-on-surface-variant' };
 
 // Auto-detect nilai panjang agar font diperkecil otomatis
 $isLongValue = strlen((string) $value) > 10;
@@ -28,7 +28,7 @@ $isVeryLong  = strlen((string) $value) > 16;
 @endphp
 
 <div {{ $attributes->merge(['class' => '']) }}>
-    <div class="relative bg-white border border-outline-variant rounded-xl overflow-hidden
+    <div class="relative bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden
                 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group h-full">
 
         {{-- Accent top border --}}

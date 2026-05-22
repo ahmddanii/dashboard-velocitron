@@ -5,7 +5,7 @@
             <p class="dashboard-subtitle">DSS-driven recommendations & alerts</p>
         </div>
         @if (!empty($intelligenceFeed))
-            <span class="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+            <span class="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-blue-500/20">
                 <span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
                 {{ count($intelligenceFeed) }} insights
             </span>
@@ -24,10 +24,34 @@
                     };
 
                     $sc = [
-                        'success' => ['bar' => 'bg-green-500', 'bg' => 'bg-green-50/50', 'border' => 'border-green-100', 'text' => 'text-green-700', 'icon' => 'check_circle'],
-                        'danger' => ['bar' => 'bg-red-500', 'bg' => 'bg-red-50/50', 'border' => 'border-red-100', 'text' => 'text-red-700', 'icon' => 'warning'],
-                        'warning' => ['bar' => 'bg-amber-400', 'bg' => 'bg-amber-50/50', 'border' => 'border-amber-100', 'text' => 'text-amber-700', 'icon' => 'schedule'],
-                        'info' => ['bar' => 'bg-blue-400', 'bg' => 'bg-blue-50/50', 'border' => 'border-blue-100', 'text' => 'text-blue-700', 'icon' => 'info'],
+                        'success' => [
+                            'bar' => 'bg-green-500', 
+                            'bg' => 'bg-green-50/50 dark:bg-green-500/5', 
+                            'border' => 'border-green-100 dark:border-green-500/10', 
+                            'text' => 'text-green-700 dark:text-green-400', 
+                            'icon' => 'check_circle'
+                        ],
+                        'danger' => [
+                            'bar' => 'bg-red-500', 
+                            'bg' => 'bg-red-50/50 dark:bg-red-500/5', 
+                            'border' => 'border-red-100 dark:border-red-500/10', 
+                            'text' => 'text-red-700 dark:text-red-400', 
+                            'icon' => 'warning'
+                        ],
+                        'warning' => [
+                            'bar' => 'bg-amber-400', 
+                            'bg' => 'bg-amber-50/50 dark:bg-amber-500/5', 
+                            'border' => 'border-amber-100 dark:border-amber-500/10', 
+                            'text' => 'text-amber-700 dark:text-amber-400', 
+                            'icon' => 'schedule'
+                        ],
+                        'info' => [
+                            'bar' => 'bg-blue-400', 
+                            'bg' => 'bg-blue-50/50 dark:bg-blue-500/5', 
+                            'border' => 'border-blue-100 dark:border-blue-500/10', 
+                            'text' => 'text-blue-700 dark:text-blue-400', 
+                            'icon' => 'info'
+                        ],
                     ][$severity];
                 @endphp
 
@@ -42,7 +66,7 @@
                         <div class="flex-1 min-w-0">
                             <div class="flex justify-between items-start mb-1">
                                 <p class="font-bold text-sm text-on-surface">{{ $feed['title'] }}</p>
-                                <span class="text-[10px] font-semibold text-on-surface-variant bg-white/50 px-2 py-0.5 rounded-full border border-black/5">
+                                <span class="text-[10px] font-semibold text-on-surface-variant bg-white/50 dark:bg-surface-container-high px-2 py-0.5 rounded-full border border-black/5 dark:border-white/5">
                                     {{ \Carbon\Carbon::parse($feed['created_at'])->diffForHumans() }}
                                 </span>
                             </div>

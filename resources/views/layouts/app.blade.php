@@ -15,10 +15,19 @@
     {{-- Vite: Tailwind CSS + JS --}}
     @vite(['resources/css/app.css', 'resources/js/app.js', 'resources/js/dashboard.js'])
 
+    {{-- Theme Initialization --}}
+    <script>
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+
     @stack('styles')
 </head>
 
-<body class="text-on-surface">
+<body class="bg-background text-on-surface transition-colors duration-300">
 
     {{-- Sidebar --}}
     @include('layouts.partials.sidebar')

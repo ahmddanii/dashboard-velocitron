@@ -1,13 +1,13 @@
 {{-- ── Role Badge + Header ────────────────────────────── --}}
 @php
     $roleConfig = [
-        'head-analytics' => ['label' => 'Head of Data Analytics & BI', 'icon' => 'analytics', 'color' => 'bg-purple-100 text-purple-700 border-purple-200'],
-        'financial-controller' => ['label' => 'Financial Controller', 'icon' => 'account_balance', 'color' => 'bg-green-100 text-green-700 border-green-200'],
-        'logistics-officer' => ['label' => 'Chief Logistics Officer', 'icon' => 'local_shipping', 'color' => 'bg-orange-100 text-orange-700 border-orange-200'],
-        'procurement-director' => ['label' => 'Director of Strategic Procurement', 'icon' => 'inventory_2', 'color' => 'bg-blue-100 text-blue-700 border-blue-200'],
-        'key-account-manager' => ['label' => 'Key Account Manager', 'icon' => 'handshake', 'color' => 'bg-cyan-100 text-cyan-700 border-cyan-200'],
+        'head-analytics' => ['label' => 'Head of Data Analytics & BI', 'icon' => 'analytics', 'color' => 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20'],
+        'financial-controller' => ['label' => 'Financial Controller', 'icon' => 'account_balance', 'color' => 'bg-green-100 text-green-700 border-green-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/20'],
+        'logistics-officer' => ['label' => 'Chief Logistics Officer', 'icon' => 'local_shipping', 'color' => 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20'],
+        'procurement-director' => ['label' => 'Director of Strategic Procurement', 'icon' => 'inventory_2', 'color' => 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20'],
+        'key-account-manager' => ['label' => 'Key Account Manager', 'icon' => 'handshake', 'color' => 'bg-cyan-100 text-cyan-700 border-cyan-200 dark:bg-cyan-500/10 dark:text-cyan-400 dark:border-cyan-500/20'],
     ];
-    $rc = $roleConfig[$role] ?? ['label' => 'User', 'icon' => 'person', 'color' => 'bg-slate-100 text-slate-600 border-slate-200'];
+    $rc = $roleConfig[$role] ?? ['label' => 'User', 'icon' => 'person', 'color' => 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-500/10 dark:text-slate-400 dark:border-slate-500/20'];
 @endphp
 
 <div class="flex justify-between items-start mb-8">

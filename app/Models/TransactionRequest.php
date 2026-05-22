@@ -43,6 +43,7 @@ class TransactionRequest extends Model
         'approved_at',
 
         'decision_note',
+        'is_imported',
     ];
 
     protected $casts = [

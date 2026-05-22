@@ -1,7 +1,7 @@
-<div class="bg-white border border-outline-variant rounded-xl overflow-hidden">
+<div class="dashboard-card overflow-hidden">
     <div class="p-4 border-b border-slate-100 flex justify-between items-center">
         <h3 class="font-title-sm text-title-sm">Top 10 Produk Terlaris</h3>
-        <span class="text-xs font-bold bg-blue-50 text-blue-700 px-2 py-1 rounded-full border border-blue-100">
+        <span class="text-xs font-bold bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 px-2 py-1 rounded-full border border-blue-100 dark:border-blue-500/20">
             Berdasarkan Total Sales
         </span>
     </div>
@@ -19,9 +19,9 @@
                     <th class="px-4 py-3 font-label-caps text-label-caps text-on-surface-variant text-right">QTY</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-slate-100">
+            <tbody class="divide-y divide-outline-variant">
                 @foreach($products as $i => $p)
-                    <tr class="hover:bg-slate-50 transition-colors">
+                    <tr class="hover:bg-surface-container-low transition-colors">
                         <td class="px-4 py-3 text-sm font-bold text-on-surface-variant">{{ $i + 1 }}</td>
                         <td class="px-4 py-3">
                             <p class="text-sm font-semibold text-on-surface leading-snug">{{ $p['product_name'] }}</p>
@@ -29,9 +29,9 @@
                         </td>
                         <td class="px-4 py-3">
                             <span class="text-xs font-bold px-2 py-1 rounded-full
-                                    @if($p['category'] === 'Technology') bg-blue-50 text-blue-700
-                                    @elseif($p['category'] === 'Furniture') bg-amber-50 text-amber-700
-                                    @else bg-green-50 text-green-700 @endif">
+                                    @if($p['category'] === 'Technology') bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400
+                                    @elseif($p['category'] === 'Furniture') bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400
+                                    @else bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 @endif">
                                 {{ $p['category'] }}
                             </span>
                         </td>

@@ -130,11 +130,11 @@
 
     </x-ui.card>
 
-    <x-ui.card class="col-span-12 md:col-span-5 overflow-hidden bg-cyan-50 border-cyan-200">
+    <x-ui.card class="col-span-12 md:col-span-5 overflow-hidden bg-cyan-50 dark:bg-cyan-950/20 border-cyan-200 dark:border-cyan-800/30">
 
         <div class="dashboard-card-body flex flex-col justify-center h-full">
 
-            <div class="w-10 h-10 rounded-lg bg-cyan-100 flex items-center justify-center text-cyan-600 mb-4">
+            <div class="w-10 h-10 rounded-lg bg-cyan-100 dark:bg-cyan-500/20 flex items-center justify-center text-cyan-600 dark:text-cyan-400 mb-4">
 
                 <span class="material-symbols-outlined material-icon-fill">
                     handshake
@@ -142,16 +142,16 @@
 
             </div>
 
-            <p class="font-semibold text-cyan-900 mb-3">
+            <p class="font-semibold text-cyan-900 dark:text-cyan-100 mb-3">
                 Alur Approval Kontrak
             </p>
 
-            <ol class="text-sm text-cyan-700 space-y-2 list-none">
+            <ol class="text-sm text-cyan-700 dark:text-cyan-300/80 space-y-2 list-none">
 
                 <li class="flex items-start gap-2">
 
                     <span
-                        class="w-5 h-5 rounded-full bg-cyan-200 text-cyan-800 text-xs flex items-center justify-center font-bold shrink-0 mt-0.5">
+                        class="w-5 h-5 rounded-full bg-cyan-200 dark:bg-cyan-500/30 text-cyan-800 dark:text-cyan-100 text-xs flex items-center justify-center font-bold shrink-0 mt-0.5">
                         1
                     </span>
 

@@ -31,10 +31,12 @@
             <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
 
                 {{-- ── Form Input ───────────────────────────────── --}}
-                <div class="lg:col-span-3 bg-white border border-outline-variant rounded-xl overflow-hidden">
-                    <div class="p-4 border-b border-slate-100 bg-surface-container-low">
-                        <h3 class="font-title-sm text-title-sm flex items-center gap-2">
-                            <span class="material-symbols-outlined text-secondary">tune</span>
+                <div class="lg:col-span-3 bg-surface-container-lowest dark:bg-white/[0.02] backdrop-blur-md border border-outline-variant/50 rounded-2xl overflow-hidden shadow-sm">
+                    <div class="p-5 border-b border-outline-variant/30 bg-surface-container-low/50 dark:bg-white/[0.05]">
+                        <h3 class="font-black text-sm uppercase tracking-widest text-on-surface flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center text-secondary">
+                                <span class="material-symbols-outlined text-base">tune</span>
+                            </div>
                             Parameter Transaksi
                         </h3>
                     </div>
@@ -153,8 +155,8 @@
                         </div>
 
                         <button type="submit"
-                            class="w-full py-3 bg-secondary text-white rounded-lg font-semibold hover:bg-blue-700 transition-all flex items-center justify-center gap-2">
-                            <span class="material-symbols-outlined text-sm">psychology</span>
+                            class="w-full py-4 bg-secondary text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-secondary/90 transition-all flex items-center justify-center gap-3 shadow-lg shadow-secondary/20 hover:scale-[1.02] active:scale-[0.98]">
+                            <span class="material-symbols-outlined text-lg">psychology</span>
                             Jalankan Prediksi
                         </button>
                     </form>
@@ -165,27 +167,26 @@
 
                     @if(isset($result))
                         {{-- Hasil --}}
-                        <div class="bg-white border-2 rounded-xl overflow-hidden
-                            {{ $result['prediction'] == 1 ? 'border-green-400' : 'border-red-400' }}">
+                        <div class="bg-surface-container-lowest dark:bg-white/[0.02] backdrop-blur-md border border-outline-variant/50 rounded-2xl overflow-hidden shadow-xl">
 
                             {{-- Header hasil --}}
-                            <div class="p-5 {{ $result['prediction'] == 1 ? 'bg-green-50' : 'bg-red-50' }}">
-                                <div class="flex items-center gap-3">
+                            <div class="p-6 {{ $result['prediction'] == 1 ? 'bg-green-50/50 dark:bg-green-500/10' : 'bg-red-50/50 dark:bg-red-500/10' }} border-b border-outline-variant/30">
+                                <div class="flex items-center gap-4">
                                     <div
-                                        class="w-12 h-12 rounded-full flex items-center justify-center
-                                        {{ $result['prediction'] == 1 ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600' }}">
-                                        <span class="material-symbols-outlined text-2xl"
+                                        class="w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm
+                                        {{ $result['prediction'] == 1 ? 'bg-white dark:bg-green-500/20 text-green-600' : 'bg-white dark:bg-red-500/20 text-red-600' }}">
+                                        <span class="material-symbols-outlined text-3xl"
                                             style="font-variation-settings:'FILL' 1">
                                             {{ $result['prediction'] == 1 ? 'check_circle' : 'cancel' }}
                                         </span>
                                     </div>
                                     <div>
-                                        <p class="text-xs font-bold uppercase tracking-wider
-                                            {{ $result['prediction'] == 1 ? 'text-green-600' : 'text-red-500' }}">
+                                        <p class="text-[10px] font-black uppercase tracking-[0.2em]
+                                            {{ $result['prediction'] == 1 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400' }}">
                                             Hasil Prediksi
                                         </p>
-                                        <p class="text-xl font-bold
-                                            {{ $result['prediction'] == 1 ? 'text-green-800' : 'text-red-800' }}">
+                                        <p class="text-2xl font-black
+                                            {{ $result['prediction'] == 1 ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200' }}">
                                             {{ $result['label_id'] }}
                                         </p>
                                     </div>
@@ -193,37 +194,37 @@
                             </div>
 
                             {{-- Detail probabilitas --}}
-                            <div class="p-5 space-y-4">
+                            <div class="p-6 space-y-6">
                                 {{-- Prob untung --}}
                                 <div>
-                                    <div class="flex justify-between text-sm mb-1.5">
-                                        <span class="font-semibold text-green-700">Probabilitas Untung</span>
-                                        <span class="font-bold text-green-700">{{ $result['prob_profitable'] }}%</span>
+                                    <div class="flex justify-between items-end mb-2">
+                                        <span class="text-[10px] font-black uppercase tracking-widest text-green-700 dark:text-green-400">Probabilitas Untung</span>
+                                        <span class="text-lg font-black text-green-700 dark:text-green-400">{{ $result['prob_profitable'] }}%</span>
                                     </div>
-                                    <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
-                                        <div class="h-full bg-green-500 rounded-full transition-all"
+                                    <div class="h-2.5 bg-surface-container rounded-full overflow-hidden shadow-inner">
+                                        <div class="h-full bg-gradient-to-r from-green-500/80 to-green-500 rounded-full transition-all duration-1000"
                                             style="width: {{ $result['prob_profitable'] }}%"></div>
                                     </div>
                                 </div>
                                 {{-- Prob rugi --}}
                                 <div>
-                                    <div class="flex justify-between text-sm mb-1.5">
-                                        <span class="font-semibold text-red-600">Probabilitas Rugi</span>
-                                        <span class="font-bold text-red-600">{{ $result['prob_loss'] }}%</span>
+                                    <div class="flex justify-between items-end mb-2">
+                                        <span class="text-[10px] font-black uppercase tracking-widest text-red-600 dark:text-red-400">Probabilitas Rugi</span>
+                                        <span class="text-lg font-black text-red-600 dark:text-red-400">{{ $result['prob_loss'] }}%</span>
                                     </div>
-                                    <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
-                                        <div class="h-full bg-red-400 rounded-full transition-all"
+                                    <div class="h-2.5 bg-surface-container rounded-full overflow-hidden shadow-inner">
+                                        <div class="h-full bg-gradient-to-r from-red-400/80 to-red-400 rounded-full transition-all duration-1000"
                                             style="width: {{ $result['prob_loss'] }}%"></div>
                                     </div>
                                 </div>
 
-                                <div class="pt-3 border-t border-slate-100 flex justify-between items-center">
-                                    <span class="text-sm text-on-surface-variant">Tingkat Keyakinan</span>
-                                    <span class="text-sm font-bold px-3 py-1 rounded-full
-                                        @if($result['confidence'] === 'Sangat Tinggi') bg-green-100 text-green-700
-                                        @elseif($result['confidence'] === 'Tinggi') bg-blue-100 text-blue-700
-                                        @elseif($result['confidence'] === 'Sedang') bg-amber-100 text-amber-700
-                                        @else bg-slate-100 text-slate-600 @endif">
+                                <div class="pt-5 border-t border-outline-variant/30 flex justify-between items-center">
+                                    <span class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">Tingkat Keyakinan</span>
+                                    <span class="text-xs font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-sm
+                                        @if($result['confidence'] === 'Sangat Tinggi') bg-green-500/10 text-green-600 dark:text-green-400
+                                        @elseif($result['confidence'] === 'Tinggi') bg-blue-500/10 text-blue-600 dark:text-blue-400
+                                        @elseif($result['confidence'] === 'Sedang') bg-amber-500/10 text-amber-600 dark:text-amber-400
+                                        @else bg-surface-container-high text-on-surface-variant @endif">
                                         {{ $result['confidence'] }}
                                     </span>
                                 </div>
@@ -231,14 +232,16 @@
                         </div>
 
                         {{-- Input yang digunakan --}}
-                        <div class="bg-white border border-outline-variant rounded-xl p-4">
-                            <p class="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-3">Input yang
-                                Digunakan</p>
-                            <div class="space-y-1.5">
+                        <div class="bg-surface-container-lowest dark:bg-white/[0.02] border border-outline-variant/50 rounded-2xl p-5">
+                            <p class="text-[10px] font-black text-on-surface-variant uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 rounded-full bg-primary/40"></span>
+                                Input yang Digunakan
+                            </p>
+                            <div class="grid grid-cols-2 gap-x-6 gap-y-3">
                                 @foreach(['sales' => 'Sales', 'quantity' => 'Quantity', 'discount' => 'Discount', 'shipping_days' => 'Shipping Days', 'category' => 'Category', 'segment' => 'Segment', 'region' => 'Region', 'ship_mode' => 'Ship Mode'] as $key => $label)
-                                    <div class="flex justify-between text-sm">
-                                        <span class="text-on-surface-variant">{{ $label }}</span>
-                                        <span class="font-semibold">
+                                    <div class="flex justify-between items-center text-xs py-1.5 border-b border-outline-variant/10 last:border-0">
+                                        <span class="text-on-surface-variant font-medium">{{ $label }}</span>
+                                        <span class="font-bold text-on-surface">
                                             @if($key === 'sales') ${{ number_format($input[$key], 2) }}
                                             @elseif($key === 'discount') {{ ($input[$key] * 100) }}%
                                             @else {{ $input[$key] }}
@@ -251,14 +254,13 @@
 
                     @else
                         {{-- Placeholder sebelum prediksi --}}
-                        <div class="bg-white border border-outline-variant rounded-xl p-8 text-center">
-                            <div class="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-4">
-                                <span class="material-symbols-outlined text-3xl text-blue-400"
+                        <div class="bg-surface-container-lowest dark:bg-white/[0.02] border border-outline-variant/50 rounded-2xl p-10 text-center shadow-sm">
+                            <div class="w-20 h-20 rounded-3xl bg-secondary/10 dark:bg-secondary/20 flex items-center justify-center mx-auto mb-6 rotate-3">
+                                <span class="material-symbols-outlined text-4xl text-secondary"
                                     style="font-variation-settings:'FILL' 1">psychology</span>
                             </div>
-                            <p class="font-semibold text-on-surface mb-2">Belum ada prediksi</p>
-                            <p class="text-sm text-on-surface-variant">Isi form di sebelah kiri dan klik <strong>Jalankan
-                                    Prediksi</strong> untuk melihat hasil analisis model Machine Learning.</p>
+                            <p class="font-black text-on-surface uppercase tracking-widest mb-3">Belum ada prediksi</p>
+                            <p class="text-sm text-on-surface-variant leading-relaxed px-4">Isi form di sebelah kiri dan klik <span class="font-black text-secondary">Jalankan Prediksi</span> untuk melihat hasil analisis model Machine Learning.</p>
                         </div>
 
                         {{-- Info model --}}
