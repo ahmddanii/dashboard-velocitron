@@ -10,7 +10,12 @@ use Illuminate\Support\Facades\Http;
 
 class DashboardController extends Controller
 {
-    private string $api = 'http://127.0.0.1:5000/api';
+    private string $api;
+
+    public function __construct()
+    {
+        $this->api = config('services.flask.url');
+    }
 
     public function index()
     {
@@ -94,20 +99,20 @@ class DashboardController extends Controller
         $profitablePredictions =
 
             (clone $query)
-                ->where(
-                    'prediction',
-                    'Profitable'
-                )
-                ->count();
+            ->where(
+                'prediction',
+                'Profitable'
+            )
+            ->count();
 
         $riskyPredictions =
 
             (clone $query)
-                ->where(
-                    'prediction',
-                    'Loss'
-                )
-                ->count();
+            ->where(
+                'prediction',
+                'Loss'
+            )
+            ->count();
 
         $avgConfidence = round(
 
@@ -142,15 +147,15 @@ class DashboardController extends Controller
         $dssTrend =
 
             (clone $query)
-                ->selectRaw('
+            ->selectRaw('
         DATE(created_at) as date,
         SUM(CASE WHEN prediction = "Profitable" OR prediction = "1" THEN 1 ELSE 0 END) as approved,
         SUM(CASE WHEN prediction = "Loss" OR prediction = "0" THEN 1 ELSE 0 END) as rejected
     ')
-                ->groupBy('date')
-                ->orderBy('date')
-                ->take(10)
-                ->get();
+            ->groupBy('date')
+            ->orderBy('date')
+            ->take(10)
+            ->get();
 
         $totalTransactions = TransactionRequest::count();
         $approvedCount = TransactionRequest::where('status', 'approved')->count();
@@ -307,8 +312,8 @@ class DashboardController extends Controller
             'executiveInsights' => [
                 "Approval rate mencapai {$approvalRate}% dari seluruh transaksi DSS.",
                 "Rata-rata confidence DSS berada di angka {$avgConfidence}% untuk seluruh approval prediction.",
-                'Kategori paling berisiko saat ini adalah '.($riskyCategory?->category ?? '-').'.',
-                'Ship mode paling sering mengalami reject adalah '.($riskyShipMode?->ship_mode ?? '-').'.',
+                'Kategori paling berisiko saat ini adalah ' . ($riskyCategory?->category ?? '-') . '.',
+                'Ship mode paling sering mengalami reject adalah ' . ($riskyShipMode?->ship_mode ?? '-') . '.',
             ],
             'intelligenceFeed' => $this->getIntelligenceFeed('financial-controller'),
         ]);
@@ -381,37 +386,37 @@ class DashboardController extends Controller
         $totalShipment =
 
             (clone $query)
-                ->where(
-                    'request_type',
-                    'shipment'
-                )
-                ->count();
+            ->where(
+                'request_type',
+                'shipment'
+            )
+            ->count();
 
         $approvedShipment =
 
             (clone $query)
-                ->where(
-                    'request_type',
-                    'shipment'
-                )
-                ->where(
-                    'status',
-                    'approved'
-                )
-                ->count();
+            ->where(
+                'request_type',
+                'shipment'
+            )
+            ->where(
+                'status',
+                'approved'
+            )
+            ->count();
 
         $rejectedShipment =
 
             (clone $query)
-                ->where(
-                    'request_type',
-                    'shipment'
-                )
-                ->where(
-                    'status',
-                    'rejected'
-                )
-                ->count();
+            ->where(
+                'request_type',
+                'shipment'
+            )
+            ->where(
+                'status',
+                'rejected'
+            )
+            ->count();
 
         $avgShipmentConfidence = round(
 
@@ -434,18 +439,18 @@ class DashboardController extends Controller
         $mostRiskyShipMode =
 
             (clone $query)
-                ->where(
-                    'request_type',
-                    'shipment'
-                )
-                ->where(
-                    'status',
-                    'rejected'
-                )
-                ->selectRaw('ship_mode, COUNT(*) as total')
-                ->groupBy('ship_mode')
-                ->orderByDesc('total')
-                ->first();
+            ->where(
+                'request_type',
+                'shipment'
+            )
+            ->where(
+                'status',
+                'rejected'
+            )
+            ->selectRaw('ship_mode, COUNT(*) as total')
+            ->groupBy('ship_mode')
+            ->orderByDesc('total')
+            ->first();
 
         return view('dashboard.index', compact(
             'summary',
@@ -493,7 +498,7 @@ class DashboardController extends Controller
                 "Total shipment request tercatat sebanyak {$totalShipment}.",
                 "Approved shipment mencapai {$approvedShipment} request.",
                 "Rejected shipment mencapai {$rejectedShipment} request.",
-                'Ship mode paling risky saat ini adalah '.($mostRiskyShipMode?->ship_mode ?? '-').'.',
+                'Ship mode paling risky saat ini adalah ' . ($mostRiskyShipMode?->ship_mode ?? '-') . '.',
             ],
 
             'intelligenceFeed' => $this->getIntelligenceFeed(
@@ -566,37 +571,37 @@ class DashboardController extends Controller
         $totalProcurement =
 
             (clone $query)
-                ->where(
-                    'request_type',
-                    'procurement'
-                )
-                ->count();
+            ->where(
+                'request_type',
+                'procurement'
+            )
+            ->count();
 
         $approvedProcurement =
 
             (clone $query)
-                ->where(
-                    'request_type',
-                    'procurement'
-                )
-                ->where(
-                    'status',
-                    'approved'
-                )
-                ->count();
+            ->where(
+                'request_type',
+                'procurement'
+            )
+            ->where(
+                'status',
+                'approved'
+            )
+            ->count();
 
         $rejectedProcurement =
 
             (clone $query)
-                ->where(
-                    'request_type',
-                    'procurement'
-                )
-                ->where(
-                    'status',
-                    'rejected'
-                )
-                ->count();
+            ->where(
+                'request_type',
+                'procurement'
+            )
+            ->where(
+                'status',
+                'rejected'
+            )
+            ->count();
 
         $avgProcurementConfidence = round(
 
@@ -619,18 +624,18 @@ class DashboardController extends Controller
         $mostRejectedCategory =
 
             (clone $query)
-                ->where(
-                    'request_type',
-                    'procurement'
-                )
-                ->where(
-                    'status',
-                    'rejected'
-                )
-                ->selectRaw('category, COUNT(*) as total')
-                ->groupBy('category')
-                ->orderByDesc('total')
-                ->first();
+            ->where(
+                'request_type',
+                'procurement'
+            )
+            ->where(
+                'status',
+                'rejected'
+            )
+            ->selectRaw('category, COUNT(*) as total')
+            ->groupBy('category')
+            ->orderByDesc('total')
+            ->first();
 
         return view('dashboard.index', compact(
             'summary',
@@ -674,7 +679,7 @@ class DashboardController extends Controller
                 "Total procurement request tercatat sebanyak {$totalProcurement}.",
                 "Approved procurement mencapai {$approvedProcurement} request.",
                 "Rejected procurement mencapai {$rejectedProcurement} request.",
-                'Kategori procurement paling sering ditolak adalah '.($mostRejectedCategory?->category ?? '-').'.',
+                'Kategori procurement paling sering ditolak adalah ' . ($mostRejectedCategory?->category ?? '-') . '.',
             ],
 
             'intelligenceFeed' => $this->getIntelligenceFeed(
@@ -707,7 +712,7 @@ class DashboardController extends Controller
 
         $segment = array_values(array_filter(
             $segment,
-            fn ($s) => in_array(
+            fn($s) => in_array(
                 $s['segment'],
                 ['Corporate', 'Home Office']
             )
@@ -764,37 +769,37 @@ class DashboardController extends Controller
         $totalContracts =
 
             (clone $query)
-                ->where(
-                    'request_type',
-                    'contract'
-                )
-                ->count();
+            ->where(
+                'request_type',
+                'contract'
+            )
+            ->count();
 
         $approvedContracts =
 
             (clone $query)
-                ->where(
-                    'request_type',
-                    'contract'
-                )
-                ->where(
-                    'status',
-                    'approved'
-                )
-                ->count();
+            ->where(
+                'request_type',
+                'contract'
+            )
+            ->where(
+                'status',
+                'approved'
+            )
+            ->count();
 
         $rejectedContracts =
 
             (clone $query)
-                ->where(
-                    'request_type',
-                    'contract'
-                )
-                ->where(
-                    'status',
-                    'rejected'
-                )
-                ->count();
+            ->where(
+                'request_type',
+                'contract'
+            )
+            ->where(
+                'status',
+                'rejected'
+            )
+            ->count();
 
         $avgContractConfidence = round(
 
@@ -817,14 +822,14 @@ class DashboardController extends Controller
         $topContractRegion =
 
             (clone $query)
-                ->where(
-                    'request_type',
-                    'contract'
-                )
-                ->selectRaw('region, COUNT(*) as total')
-                ->groupBy('region')
-                ->orderByDesc('total')
-                ->first();
+            ->where(
+                'request_type',
+                'contract'
+            )
+            ->selectRaw('region, COUNT(*) as total')
+            ->groupBy('region')
+            ->orderByDesc('total')
+            ->first();
 
         /*
 |--------------------------------------------------------------------------
@@ -894,7 +899,7 @@ class DashboardController extends Controller
                 "Total contract request tercatat sebanyak {$totalContracts}.",
                 "Approved contracts mencapai {$approvedContracts}.",
                 "Rejected contracts mencapai {$rejectedContracts}.",
-                'Region kontrak tertinggi saat ini adalah '.($topContractRegion?->region ?? '-').'.',
+                'Region kontrak tertinggi saat ini adalah ' . ($topContractRegion?->region ?? '-') . '.',
             ],
 
             'intelligenceFeed' => $this->getIntelligenceFeed(
@@ -1229,7 +1234,7 @@ class DashboardController extends Controller
 
             $result = $response->json();
         } catch (\Exception $e) {
-            \Log::error('DSS Review Error: '.$e->getMessage());
+            \Log::error('DSS Review Error: ' . $e->getMessage());
         }
 
         // ✅ Update database terpisah dari fetch — pakai prob_profitable (angka) bukan confidence (string)
@@ -1240,7 +1245,7 @@ class DashboardController extends Controller
                     'confidence' => $result['prob_profitable'] ?? null, // ← angka desimal, bukan string
                 ]);
             } catch (\Exception $e) {
-                \Log::error('DB Update Error: '.$e->getMessage());
+                \Log::error('DB Update Error: ' . $e->getMessage());
             }
         }
 
@@ -1266,7 +1271,7 @@ class DashboardController extends Controller
 
             $result = $response->json();
         } catch (\Exception $e) {
-            \Log::error('DSS API Review Error: '.$e->getMessage());
+            \Log::error('DSS API Review Error: ' . $e->getMessage());
         }
 
         if ($result) {
@@ -1468,7 +1473,7 @@ class DashboardController extends Controller
             ->with(['requester', 'approver'])
             ->get();
 
-        $filename = 'transaction-report-'.now()->format('Ymd_His').'.csv';
+        $filename = 'transaction-report-' . now()->format('Ymd_His') . '.csv';
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename={$filename}",
@@ -1526,7 +1531,7 @@ class DashboardController extends Controller
                 'total' => $total,
                 'approved' => $approved,
                 'rejected' => $rejected,
-                'avg_confidence' => $avgConf.'%',
+                'avg_confidence' => $avgConf . '%',
             ],
             'recent' => TransactionRequest::latest()->take(5)->get(),
         ]);
@@ -1540,7 +1545,7 @@ class DashboardController extends Controller
         $rejected = $transactions->where('status', 'rejected')->count();
         $avgConfidence = round($transactions->avg('confidence'), 1);
 
-        $filename = 'dss-monitoring-report-'.now()->format('Ymd_His').'.csv';
+        $filename = 'dss-monitoring-report-' . now()->format('Ymd_His') . '.csv';
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename={$filename}",
@@ -1552,7 +1557,7 @@ class DashboardController extends Controller
             fputcsv($file, ['Prediction Volume',     $totalPredictions]);
             fputcsv($file, ['Approved Transactions', $approved]);
             fputcsv($file, ['Rejected Transactions', $rejected]);
-            fputcsv($file, ['Average Confidence',    $avgConfidence.'%']);
+            fputcsv($file, ['Average Confidence',    $avgConfidence . '%']);
             fclose($file);
         };
 
@@ -1646,7 +1651,7 @@ class DashboardController extends Controller
             }
 
             // Normalize headers for mapping
-            $normalizedHeaders = array_map(function($h) {
+            $normalizedHeaders = array_map(function ($h) {
                 return strtolower(trim(str_replace([' ', '_', '-', '.'], '', $h)));
             }, $headers);
             $headerMap = array_flip($normalizedHeaders);
@@ -1667,7 +1672,7 @@ class DashboardController extends Controller
             ];
 
             // Helper to find column index by alias
-            $findIdx = function($key) use ($aliases, $headerMap) {
+            $findIdx = function ($key) use ($aliases, $headerMap) {
                 foreach ($aliases[$key] as $alias) {
                     if (isset($headerMap[$alias])) return $headerMap[$alias];
                 }
@@ -1699,8 +1704,8 @@ class DashboardController extends Controller
             $now = now();
             $batch = [];
             $batchSize = 1000;
-            
-            $normalizeString = function($val, $default) {
+
+            $normalizeString = function ($val, $default) {
                 if (!$val) return $default;
                 $val = strtolower(trim($val));
                 if ($val === 'office supplies') return 'Office Supplies';
@@ -1711,7 +1716,7 @@ class DashboardController extends Controller
                 return ucwords($val);
             };
 
-            $getVal = function($key, $data, $indices) {
+            $getVal = function ($key, $data, $indices) {
                 $idx = $indices[$key];
                 return ($idx !== -1 && isset($data[$idx])) ? trim($data[$idx]) : null;
             };
@@ -1725,7 +1730,7 @@ class DashboardController extends Controller
 
                 $sales = (float) str_replace([',', '$'], '', $getRaw('sales') ?? 0);
                 $disc = (float) ($getRaw('discount') ?? 0);
-                
+
                 $batch[] = [
                     'requester_id' => $reqId,
                     'title' => $title,
@@ -1769,17 +1774,16 @@ class DashboardController extends Controller
 
             return redirect()->route('transactions.history', ['tab' => 'imported'])
                 ->with($errorCount > 0 ? 'warning' : 'success', $message);
-
         } catch (\Exception $e) {
             \DB::rollBack();
             if (isset($handle) && is_resource($handle)) fclose($handle);
             \Log::error('Global Import Error: ' . $e->getMessage());
-            
+
             $msg = 'Terjadi kesalahan sistem: ' . $e->getMessage();
             if (str_contains($e->getMessage(), 'upload_max_filesize')) {
                 $msg = 'Gagal: Ukuran file terlalu besar untuk diproses server.';
             }
-            
+
             return redirect()->back()->with('error', $msg);
         }
     }
@@ -1811,7 +1815,7 @@ class DashboardController extends Controller
     public function ajaxPredictImported()
     {
         $batchSize = 500; // Tingkatkan ke 500 untuk 50k+ row!
-        
+
         $transactions = TransactionRequest::where('is_imported', true)
             ->whereNull('prediction')
             ->limit($batchSize)
@@ -1856,7 +1860,7 @@ class DashboardController extends Controller
     private function processBatchPredictions(&$batch)
     {
         try {
-            $payload = array_map(function($data) {
+            $payload = array_map(function ($data) {
                 return [
                     'sales' => $data['sales'],
                     'quantity' => $data['quantity'],
@@ -1873,7 +1877,7 @@ class DashboardController extends Controller
 
             if ($response->successful()) {
                 $results = $response->json();
-                
+
                 foreach ($results as $index => $res) {
                     if (!$res || isset($res['error'])) {
                         \Log::warning('Prediction Row Error: ' . json_encode($res));
@@ -1881,11 +1885,11 @@ class DashboardController extends Controller
                         $batch[$index]['confidence'] = 0;
                         continue;
                     }
-                    
+
                     // Di model/DB kita simpan 1/0
                     $isProfitable = ($res['prediction'] ?? 0) == 1;
                     $batch[$index]['prediction'] = $isProfitable ? 1 : 0;
-                    
+
                     $prob = $res['prob_profitable'] ?? 0;
                     $batch[$index]['confidence'] = $prob;
                 }
