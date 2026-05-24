@@ -14,7 +14,18 @@ class DashboardController extends Controller
 
     public function __construct()
     {
-        $this->api = config('services.flask.url');
+        $this->api = rtrim(config('services.flask.url', 'http://localhost:5000/api'), '/');
+    }
+
+    /**
+     * Helper: fetch data dari Flask API dengan timeout & retry.
+     */
+    private function fetchFlask(string $endpoint): array
+    {
+        return Http::timeout(15)
+            ->retry(2, 500)
+            ->get("{$this->api}/{$endpoint}")
+            ->json() ?? [];
     }
 
     public function index()
@@ -44,15 +55,19 @@ class DashboardController extends Controller
     // ── Head of Data Analytics ────────────────────────────────
     private function dashboardAnalytics()
     {
-        $fetch = fn($endpoint) => Http::timeout(3)->get("{$this->api}/{$endpoint}")->json() ?? [];
-
-        $summary = $fetch('summary');
-        $monthly = $fetch('monthly-trend');
-        $yearly = $fetch('yearly-trend');
-        $category = $fetch('profit-by-category');
-        $region = $fetch('sales-by-region');
-        $segment = $fetch('sales-by-segment');
-        $products = $fetch('top-products');
+        $apiWarning = false;
+        try {
+            $summary  = $this->fetchFlask('summary');
+            $monthly  = $this->fetchFlask('monthly-trend');
+            $yearly   = $this->fetchFlask('yearly-trend');
+            $category = $this->fetchFlask('profit-by-category');
+            $region   = $this->fetchFlask('sales-by-region');
+            $segment  = $this->fetchFlask('sales-by-segment');
+            $products = $this->fetchFlask('top-products');
+        } catch (\Exception $e) {
+            $summary = $monthly = $yearly = $category = $region = $segment = $products = [];
+            $apiWarning = true;
+        }
         /*
 |--------------------------------------------------------------------------
 | Dashboard Filters
@@ -178,7 +193,7 @@ class DashboardController extends Controller
         $riskyCategory = (clone $riskyQuery)->where('status', 'rejected')->selectRaw('category, COUNT(*) as total')->groupBy('category')->orderByDesc('total')->first();
         $riskyShipMode = (clone $riskyQuery)->where('status', 'rejected')->selectRaw('ship_mode, COUNT(*) as total')->groupBy('ship_mode')->orderByDesc('total')->first();
 
-        return view('dashboard.index', [
+        return view('dashboard.index', ['apiWarning' => $apiWarning] + [
 
             'role' => 'head-analytics',
 
@@ -236,12 +251,16 @@ class DashboardController extends Controller
     // ── Financial Controller ──────────────────────────────────
     private function dashboardFinance()
     {
-        $fetch = fn($endpoint) => Http::timeout(3)->get("{$this->api}/{$endpoint}")->json() ?? [];
-
-        $summary = $fetch('summary');
-        $region = $fetch('sales-by-region');
-        $category = $fetch('profit-by-category');
-        $yearly = $fetch('yearly-trend');
+        $apiWarning = false;
+        try {
+            $summary  = $this->fetchFlask('summary');
+            $region   = $this->fetchFlask('sales-by-region');
+            $category = $this->fetchFlask('profit-by-category');
+            $yearly   = $this->fetchFlask('yearly-trend');
+        } catch (\Exception $e) {
+            $summary = $region = $category = $yearly = [];
+            $apiWarning = true;
+        }
 
         $statusFilter = request('status');
         $periodFilter = request('period');
@@ -285,7 +304,7 @@ class DashboardController extends Controller
 
         $dssTrend = (clone $query)->selectRaw('DATE(created_at) as date, SUM(CASE WHEN status = "approved" THEN 1 ELSE 0 END) as approved, SUM(CASE WHEN status = "rejected" THEN 1 ELSE 0 END) as rejected')->groupBy('date')->orderBy('date')->take(10)->get();
 
-        return view('dashboard.index', compact('summary', 'region', 'category', 'yearly') + [
+        return view('dashboard.index', compact('summary', 'region', 'category', 'yearly') + ['apiWarning' => $apiWarning] + [
             'role' => 'financial-controller',
             'monthly' => [],
             'segment' => [],
@@ -324,14 +343,11 @@ class DashboardController extends Controller
     {
         $apiWarning = false;
         try {
-            $summary = Http::timeout(15)->get("{$this->api}/summary")->json() ?? [];
-            $region = Http::timeout(15)->get("{$this->api}/sales-by-region")->json() ?? [];
-            $yearly = Http::timeout(15)->get("{$this->api}/yearly-trend")->json() ?? [];
+            $summary = $this->fetchFlask('summary');
+            $region  = $this->fetchFlask('sales-by-region');
+            $yearly  = $this->fetchFlask('yearly-trend');
         } catch (\Exception $e) {
-            $summary = [];
-            $region = [];
-            $yearly = [];
-            // Log error jika perlu atau set flag peringatan
+            $summary = $region = $yearly = [];
             $apiWarning = true;
         }
 
@@ -511,15 +527,15 @@ class DashboardController extends Controller
     // ── Director of Strategic Procurement ────────────────────
     private function dashboardProcurement()
     {
-        $summary = Http::timeout(5)
-            ->get("{$this->api}/summary")
-            ->json() ?? [];
-
-        $category = Http::timeout(5)
-            ->get("{$this->api}/profit-by-category")
-            ->json() ?? [];
-
-        $products = Http::timeout(5)->get("{$this->api}/top-products")->json() ?? [];
+        $apiWarning = false;
+        try {
+            $summary  = $this->fetchFlask('summary');
+            $category = $this->fetchFlask('profit-by-category');
+            $products = $this->fetchFlask('top-products');
+        } catch (\Exception $e) {
+            $summary = $category = $products = [];
+            $apiWarning = true;
+        }
         /*
 |--------------------------------------------------------------------------
 | Dashboard Filters
@@ -641,7 +657,7 @@ class DashboardController extends Controller
             'summary',
             'category',
             'products'
-        ) + [
+        ) + ['apiWarning' => $apiWarning] + [
 
             'role' => 'procurement-director',
 
@@ -692,17 +708,15 @@ class DashboardController extends Controller
     // ── Key Account Manager ───────────────────────────────────
     private function dashboardKAM()
     {
-        $summary = Http::timeout(5)
-            ->get("{$this->api}/summary")
-            ->json() ?? [];
-
-        $segment = Http::timeout(5)
-            ->get("{$this->api}/sales-by-segment")
-            ->json() ?? [];
-
-        $region = Http::timeout(5)
-            ->get("{$this->api}/sales-by-region")
-            ->json() ?? [];
+        $apiWarning = false;
+        try {
+            $summary = $this->fetchFlask('summary');
+            $segment = $this->fetchFlask('sales-by-segment');
+            $region  = $this->fetchFlask('sales-by-region');
+        } catch (\Exception $e) {
+            $summary = $segment = $region = [];
+            $apiWarning = true;
+        }
 
         /*
 |--------------------------------------------------------------------------
@@ -853,7 +867,7 @@ class DashboardController extends Controller
             'segment',
             'region',
             'strategies'
-        ) + [
+        ) + ['apiWarning' => $apiWarning] + [
 
             'role' => 'key-account-manager',
 
@@ -929,7 +943,7 @@ class DashboardController extends Controller
         ]);
 
         try {
-            $response = Http::timeout(5)->post("{$this->api}/predict-profit", [
+            $response = Http::timeout(15)->retry(2, 500)->post("{$this->api}/predict-profit", [
                 'sales' => (float) $request->sales,
                 'quantity' => (int) $request->quantity,
                 'discount' => (float) $request->discount,

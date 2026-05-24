@@ -30,6 +30,19 @@
                 @include('dashboard.partials.api-error')
 
             @else
+                {{-- Warning: Flask down tapi dashboard tetap bisa diakses --}}
+                @if(isset($apiWarning) && $apiWarning)
+                    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-3 mb-6">
+                        <div class="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+                            <span class="material-symbols-outlined text-xl">warning</span>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-amber-800 text-sm">Data Warehouse API tidak dapat dihubungi</p>
+                            <p class="text-amber-600 text-xs mt-0.5">Grafik warehouse mungkin kosong. Data DSS tetap tersedia dari database lokal.</p>
+                        </div>
+                    </div>
+                @endif
+
                 <script type="application/json" id="dashboard-context">
                     @json($dashboardData)
                 </script>
