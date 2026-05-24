@@ -48,6 +48,12 @@ class DashboardController extends Controller
 
             abort(403);
         } catch (\Exception $e) {
+            \Log::error('Dashboard error', [
+                'message' => $e->getMessage(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
+                'flask_url' => $this->api,
+            ]);
             return view('dashboard.index', ['apiError' => true]);
         }
     }
