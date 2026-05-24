@@ -32,26 +32,30 @@ class DashboardController extends Controller
     {
         /** @var User $user */
         $user = auth()->user();
+        $role = $user->roles->first()?->name;
+
+        // Role check — di luar try/catch supaya abort(403) gak ke-catch
+        $methodMap = [
+            'head-analytics'       => 'dashboardAnalytics',
+            'financial-controller'  => 'dashboardFinance',
+            'logistics-officer'     => 'dashboardLogistics',
+            'procurement-director'  => 'dashboardProcurement',
+            'key-account-manager'   => 'dashboardKAM',
+        ];
+
+        if (!isset($methodMap[$role])) {
+            \Log::warning("Dashboard: role '{$role}' tidak dikenali untuk user #{$user->id}");
+            abort(403, "Role '{$role}' tidak memiliki akses dashboard.");
+        }
 
         try {
-            if ($user->hasRole('head-analytics')) {
-                return $this->dashboardAnalytics();
-            } elseif ($user->hasRole('financial-controller')) {
-                return $this->dashboardFinance();
-            } elseif ($user->hasRole('logistics-officer')) {
-                return $this->dashboardLogistics();
-            } elseif ($user->hasRole('procurement-director')) {
-                return $this->dashboardProcurement();
-            } elseif ($user->hasRole('key-account-manager')) {
-                return $this->dashboardKAM();
-            }
-
-            abort(403);
+            return $this->{$methodMap[$role]}();
         } catch (\Exception $e) {
             \Log::error('Dashboard error', [
-                'message' => $e->getMessage(),
-                'file'    => $e->getFile(),
-                'line'    => $e->getLine(),
+                'message'   => $e->getMessage(),
+                'file'      => $e->getFile(),
+                'line'      => $e->getLine(),
+                'role'      => $role,
                 'flask_url' => $this->api,
             ]);
             return view('dashboard.index', ['apiError' => true]);
