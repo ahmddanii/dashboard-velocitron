@@ -1,58 +1,89 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Dashboard Velocitron
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Dashboard Velocitron is a comprehensive web-based platform built with Laravel 11. It is designed for financial and analytical data management, offering a Decision Support System (DSS) with predictive analytics, transaction request workflows, and role-based access control.
 
-## About Laravel
+## 🌟 Key Features
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **Decision Support System (DSS) & Analytics:** Predictive data analysis and interactive charts using Chart.js.
+- **Role-Based Access Control (RBAC):** Secure access levels powered by `spatie/laravel-permission` (e.g., Head Analytics, Financial Controller, standard users).
+- **Transaction Request Workflow:** Complete approval system for transactions (create, review, approve, reject, cancel).
+- **Data Management:** Export and Import transactions with downloadable templates.
+- **User Management:** Manage application users and assign appropriate roles.
+- **Modern UI:** Built using Tailwind CSS and Alpine.js for a responsive and dynamic user experience.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 🛠️ Technology Stack
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- **Backend:** Laravel 11, PHP 8.4
+- **Frontend:** Tailwind CSS, Alpine.js, Blade Templates, Vite
+- **Data Visualization:** Chart.js
+- **HTTP Client (Frontend):** Axios
+- **Database:** MySQL / SQLite (configured via `.env`)
 
-## Learning Laravel
+## 🚀 Getting Started
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Prerequisites
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- PHP >= 8.4
+- Composer
+- Node.js & npm
+- Database Server (MySQL, PostgreSQL, or SQLite)
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+### Installation
 
-## Agentic Development
+1. **Clone the repository (if applicable):**
+   ```bash
+   git clone <repository-url>
+   cd uasprototype
+   ```
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+2. **Install PHP dependencies:**
+   ```bash
+   composer install
+   ```
 
-```bash
-composer require laravel/boost --dev
+3. **Install Frontend dependencies:**
+   ```bash
+   npm install
+   ```
 
-php artisan boost:install
-```
+4. **Environment Setup:**
+   Copy the `.env.example` file to `.env` and configure your database credentials and other environment variables.
+   ```bash
+   cp .env.example .env
+   ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+5. **Generate Application Key:**
+   ```bash
+   php artisan key:generate
+   ```
 
-## Contributing
+6. **Run Migrations & Seeders:**
+   Prepare your database schema and seed initial data (like roles and default users).
+   ```bash
+   php artisan migrate --seed
+   ```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+7. **Compile Frontend Assets:**
+   ```bash
+   npm run build
+   # or for development:
+   npm run dev
+   ```
 
-## Code of Conduct
+8. **Start the Development Server:**
+   ```bash
+   php artisan serve
+   ```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+You can now access the application at `http://localhost:8000`.
 
-## Security Vulnerabilities
+## 🛡️ Roles & Permissions
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+This application uses specific roles to restrict access to sensitive areas:
+- **Head Analytics:** Full access to user management, DSS, analytics export, and transaction predictive tools.
+- **Financial Controller:** Access to DSS and advanced analytics alongside the Head Analytics role.
+- **Standard User:** Basic dashboard access, profile management, and ability to create transaction requests.
 
-## License
+## 📄 License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+This project is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
