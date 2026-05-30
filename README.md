@@ -111,6 +111,13 @@ Setiap peran memiliki otorisasi spesifik pada alur kerja pengajuan transaksi (*T
 - **Key Account Manager:**
   - Membuat dan mengelola pengajuan bertipe `contract` khusus segmen Corporate dan Home Office.
 
+## 👥 Tim Pengembang
+
+Proyek ini dikembangkan oleh:
+- **Ahmad Dani**
+- **Muhammad Rizky Febrianto**
+- **Nur Ihsan**
+
 ## 📄 Lisensi
 
 Proyek ini dirilis di bawah lisensi [MIT](https://opensource.org/licenses/MIT).
